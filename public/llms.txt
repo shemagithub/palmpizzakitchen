@@ -1,0 +1,66 @@
+# Palm Pizza Kitchen
+
+> Hot stone-baked pizza, burgers, sides, drinks, and combos — delivered in Kigali, Rwanda.
+
+Palm Pizza Kitchen (palmpizzakitchen.com) is a pizza restaurant and online ordering website based in Kigali, Rwanda. Customers browse the menu, add items to cart, and pay online for delivery or pickup.
+
+## Quick facts
+
+- Business: Palm Pizza Kitchen
+- Website: https://palmpizzakitchen.com
+- Location: Kigali, Rwanda
+- Cuisine: Pizza, burgers, sides, drinks, meal combos
+- Currency: Rwandan Francs (RWF)
+- Service: Delivery across Kigali and pickup
+- Typical delivery time: 30–40 minutes
+- Typical hours: 11:00 AM – 11:00 PM daily (confirm on site)
+
+## Contact
+
+- Email: info@palmpizzakitchen.com
+- Contact page: https://palmpizzakitchen.com/contact/
+- Order online: https://palmpizzakitchen.com/pizzas/
+- Help me choose (menu picker): https://palmpizzakitchen.com/pick/
+
+## Main pages (public)
+
+- Home: https://palmpizzakitchen.com/
+- Help me choose: https://palmpizzakitchen.com/pick/
+- Pizzas menu: https://palmpizzakitchen.com/pizzas/
+- Burgers: https://palmpizzakitchen.com/burgers/
+- Sides: https://palmpizzakitchen.com/sides/
+- Drinks: https://palmpizzakitchen.com/drinks/
+- Meal combos: https://palmpizzakitchen.com/combos/
+- Offers & promo codes: https://palmpizzakitchen.com/offers/
+- About us: https://palmpizzakitchen.com/about/
+- FAQ (delivery, hours, payment): https://palmpizzakitchen.com/faq/
+- Contact: https://palmpizzakitchen.com/contact/
+- Privacy policy: https://palmpizzakitchen.com/privacy/
+- Terms: https://palmpizzakitchen.com/terms/
+- Refund policy: https://palmpizzakitchen.com/refund/
+
+## Ordering
+
+1. Browse menu categories (pizzas, burgers, sides, drinks, combos).
+2. Open a product page for details, sizes (when offered), and photos.
+3. Add items to cart.
+4. Checkout with name, phone, email, and delivery address in Kigali.
+5. Pay online (mobile money / card where available).
+
+## FAQ (summary)
+
+- **Do you deliver in Kigali?** Yes — enter your address at checkout to confirm coverage.
+- **Neighborhoods:** Central Kigali including Remera, Kimironko, Kacyiru, and nearby areas.
+- **Payment:** Secure online checkout; mobile money and card options on the payment page.
+- **Customize pizza:** Choose size on product pages where sizes are enabled; add notes at checkout.
+
+## Machine-readable data
+
+- Sitemap: https://palmpizzakitchen.com/sitemap.xml
+- Robots: https://palmpizzakitchen.com/robots.txt
+- Live menu API (JSON): https://backend.palmpizzakitchen.com/api/menu
+- Schema.org JSON-LD is embedded on home, product, FAQ, about, and contact pages.
+
+## Do not index
+
+Admin panel (/admin/), cart, checkout, account, and payment return URLs are private and blocked in robots.txt.

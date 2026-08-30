@@ -1,0 +1,35 @@
+{
+  "name": "palmpizza",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "backend:init": "npm --prefix backend run db:init && npm --prefix backend run db:seed",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "imapflow": "^1.7.6",
+    "mailparser": "^3.9.16",
+    "next": "16.3.0",
+    "nodemailer": "^9.0.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "optionalDependencies": {
+    "@next/swc-darwin-x64": "16.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,58 @@
+Palm Pizza Kitchen — redeploy backend (fixes mailbox 404)
+=========================================================
+
+Why you see this error
+----------------------
+PUT https://backend.palmpizzakitchen.com/api/mailbox/credentials → 404
+The live Node app is an older build that does not include this route.
+
+This zip includes:
+- src/routes/mailbox.js  (PUT /api/mailbox/credentials)
+- src/server.js          (mounts /api/mailbox)
+- src/routes/admin.js    (same route as backup)
+- src/services/mailbox.js
+
+Upload steps (cPanel)
+---------------------
+1. Open File Manager → your Node app folder (the one with app.js + package.json).
+2. Optional safety: download a copy of the current folder first.
+3. Upload palmpizzakitchen-backend.zip into that folder.
+4. Extract and overwrite existing files.
+5. Confirm these exist after extract:
+   - app.js
+   - package.json
+   - src/server.js
+   - src/routes/mailbox.js
+6. Do NOT upload your local .env into the zip (it is excluded on purpose).
+   Keep the server .env. Add or update these lines if missing:
+
+   IMAP_HOST=palmpizzakitchen.com
+   IMAP_PORT=993
+   IMAP_USER=info@palmpizzakitchen.com
+   IMAP_PASS=your-mailbox-password-here
+   IMAP_IP=68.65.123.100
+   MAILBOX_NAME=Palm Pizza Kitchen
+
+   Or set the same keys in cPanel → Setup Node.js App → Environment variables.
+
+7. Restart the Node.js app (Stop → Start, or touch tmp/restart.txt if you use Passenger).
+
+8. Test in a browser (while logged in as admin is not required for this check):
+   After restart, saving mailbox in Admin → Mailbox should no longer 404.
+
+9. Open https://palmpizzakitchen.com/admin/mail
+   - Enter info@ email + password
+   - Save / Connect
+   - Inbox should load
+
+If it still 404s
+----------------
+- Wrong app folder was updated (another Node app is serving the domain)
+- App was not restarted
+- Extract landed in a subfolder (files must sit next to app.js, not inside zip-name/)
+
+Quick env-only workaround (no form)
+-----------------------------------
+Even on an old build, setting IMAP_PASS + IMAP_USER on the server and
+restarting can make reading mail work. The Admin “save password” button
+still needs this redeploy to stop returning 404.

@@ -1,0 +1,100 @@
+Palm Pizza Kitchen — cPanel backend upload
+==========================================
+
+ZIP CONTENTS
+- Source code, package.json, sql/schema.sql, .env.example
+- Does NOT include node_modules or .env (create .env on the server)
+
+1) CREATE MYSQL IN CPANEL
+- MySQL Databases → create database (example: user_palmpizza)
+- Create a MySQL user and grant ALL on that database
+- Note host (usually localhost), database name, user, password
+- Tables are created automatically when the API starts (ensureSchema)
+
+2) UPLOAD
+- File Manager → go to home, e.g. /home/YOURUSER/palm-backend
+- Upload palm-pizza-backend-cpanel.zip
+- Extract, then delete the zip
+- Files should look like: app.js, package.json, src/, sql/, .env.example
+
+3) CREATE .env IN THAT FOLDER
+Copy .env.example to .env and set production values:
+
+PORT=4000
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=cpanel_mysql_user
+DB_PASSWORD=cpanel_mysql_password
+DB_NAME=cpanel_mysql_database
+JWT_SECRET=long-random-secret
+CORS_ORIGIN=https://palmpizzakitchen.com,https://www.palmpizzakitchen.com
+AUTO_SEED=1
+APP_URL=https://palmpizzakitchen.com
+BACKEND_PUBLIC_URL=https://api.palmpizzakitchen.com
+SMTP_HOST=palmpizzakitchen.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=support@palmpizzakitchen.com
+SMTP_PASS=your_mailbox_password
+SMTP_FROM="Palm Pizza Kitchen <support@palmpizzakitchen.com>"
+XENTRIPAY_API_BASE=https://xentripay.com
+XENTRIPAY_API_KEY=your_live_key
+XENTRIPAY_WEBHOOK_SECRET=your_webhook_secret
+XENTRIPAY_BUSINESS_EMAIL=support@palmpizzakitchen.com
+XENTRIPAY_BUSINESS_NAME="Palm Pizza Kitchen"
+BUSINESS_OWNER_EMAIL=info@palmpizzakitchen.com
+IMAP_HOST=palmpizzakitchen.com
+IMAP_PORT=993
+IMAP_USER=info@palmpizzakitchen.com
+IMAP_PASS=your_info_mailbox_password
+MAILBOX_NAME="Palm Pizza Kitchen"
+MAILBOX_SMTP_PORT=465
+
+Use your real frontend URL in CORS_ORIGIN and APP_URL.
+Use the public API URL in BACKEND_PUBLIC_URL (the Node.js app URL).
+
+4) SETUP NODE.JS APP (cPanel)
+- Software → Setup Node.js App → Create
+- Node.js version: 20 or 22 (not 16)
+- Application mode: Production
+- Application root: palm-backend  (folder you extracted into)
+- Application URL: create a subdomain, e.g. api.palmpizzakitchen.com
+- Application startup file: app.js
+- Save
+- Click “Run NPM Install”
+- Click “Restart”
+
+If “Run NPM Install” shows:
+  content type before "text/html" doesn't equal after "text/html; charset=utf-8"
+that is a cPanel health-check quirk, not a failed npm install. This package
+answers GET / as text/html so the check should pass. If it still appears:
+- Confirm node_modules exists in the app folder (install worked)
+- Click Restart
+- Open https://YOUR-API-URL/api/health
+Do not keep clicking Run NPM Install in a loop.
+
+On cPanel you can omit PORT in .env — Passenger sets it. Do not force PORT=4000
+if the Node.js selector already assigns a port.
+
+5) TEST
+Open: https://api.palmpizzakitchen.com/api/health
+Expect: {"ok":true,"service":"palm-pizza-backend","db":"up"}
+
+6) POINT THE WEBSITE AT THIS API
+On the Next.js frontend, set:
+NEXT_PUBLIC_API_URL=https://api.palmpizzakitchen.com/api
+
+7) XENTRIPAY WEBHOOK
+In XentriPay dashboard, webhook URL:
+https://api.palmpizzakitchen.com/api/webhooks/xentripay
+
+8) AFTER CODE UPDATES
+Upload a new zip, extract over the folder (keep the same .env),
+Run NPM Install if package.json changed, then Restart the Node.js app.
+
+TROUBLESHOOT
+- 503 / app won’t start: open Node.js App → look at stderr log; usually missing .env or wrong DB password
+- CORS errors in the browser: add the exact website origin to CORS_ORIGIN (https, no trailing slash)
+- Emails fail: SMTP_USER/SMTP_PASS must be the mailbox that exists on the host
+- Kitchen order emails go to BUSINESS_OWNER_EMAIL (info@palmpizzakitchen.com)
+- Admin Mailbox (Shop manager → Mailbox) uses IMAP_USER / IMAP_PASS (info@ palmpizzakitchen.com, IMAP 993, SMTP 465)

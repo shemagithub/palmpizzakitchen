@@ -1,0 +1,212 @@
+@import "tailwindcss";
+
+:root {
+  /* Tomato · cheese · crust — colors people expect from food brands */
+  --pam-red: #e31837;
+  --pam-red-deep: #c41230;
+  --pam-gold: #e8a317;
+  --pam-gold-soft: #fff4d6;
+  --pam-basil: #2f6b3a;
+  --pam-ink: #1c1917;
+  --pam-muted: #6b6560;
+  --pam-border: #e6dfd6;
+  --pam-surface: #ffffff;
+  --pam-warm: #fffbf7;
+  --pam-sand: #f4eee6;
+  --pam-black: #141210;
+  --background: #fffbf7;
+  --foreground: #1c1917;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-pam-red: var(--pam-red);
+  --color-pam-red-deep: var(--pam-red-deep);
+  --color-pam-gold: var(--pam-gold);
+  --color-pam-gold-soft: var(--pam-gold-soft);
+  --color-pam-basil: var(--pam-basil);
+  --color-pam-ink: var(--pam-ink);
+  --color-pam-muted: var(--pam-muted);
+  --color-pam-border: var(--pam-border);
+  --color-pam-surface: var(--pam-surface);
+  --color-pam-warm: var(--pam-warm);
+  --color-pam-sand: var(--pam-sand);
+  --color-pam-black: var(--pam-black);
+  --font-display: var(--font-oswald);
+  --font-body: var(--font-nunito);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  overflow-x: clip;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-nunito), system-ui, sans-serif;
+  min-height: 100%;
+  overflow-x: clip;
+  overflow-y: visible;
+  touch-action: manipulation;
+}
+
+::selection {
+  background: var(--pam-red);
+  color: #fff;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes soft-zoom {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.brand-script {
+  font-family: var(--font-script), cursive;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  line-height: 1.05;
+}
+
+.animate-fade-up {
+  animation: fade-up 0.75s ease-out both;
+}
+
+.animate-soft-zoom {
+  animation: soft-zoom 1.5s ease-out both;
+}
+
+.delay-1 {
+  animation-delay: 0.12s;
+}
+.delay-2 {
+  animation-delay: 0.24s;
+}
+
+.hero-scrim {
+  background: linear-gradient(
+    100deg,
+    rgba(20, 18, 16, 0.88) 0%,
+    rgba(20, 18, 16, 0.62) 42%,
+    rgba(20, 18, 16, 0.2) 72%,
+    rgba(20, 18, 16, 0.45) 100%
+  );
+}
+
+.input-field {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid var(--pam-border);
+  background: #fff;
+  color: var(--pam-ink);
+  padding-block: 0.85rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-field.input-with-icon {
+  padding-left: 2.9rem;
+}
+
+.input-field.input-with-icon-end {
+  padding-right: 2.9rem;
+}
+
+.input-field:focus {
+  border-color: var(--pam-red);
+  box-shadow: 0 0 0 3px rgba(227, 24, 55, 0.12);
+}
+
+.input-field::placeholder {
+  color: #9a948c;
+}
+
+.soft-card {
+  background: #fff;
+  border: 1px solid var(--pam-border);
+  box-shadow: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.swipe-track {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  cursor: grab;
+  touch-action: pan-x pan-y;
+}
+
+.swipe-track.is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
+}
+
+.swipe-track.snap-start > * {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* Free horizontal swipe for category filter chips (no snap fighting) */
+.category-tabs-track {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  scroll-snap-type: none;
+}
+
+/* Thumbnail strip — free left/right scroll on touch (no snap) */
+.thumb-track {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  scroll-snap-type: none;
+  cursor: grab;
+}
+
+.thumb-track.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --pam-warm: #f7f4ef;
+    --background: #f7f4ef;
+  }
+}

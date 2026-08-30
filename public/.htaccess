@@ -1,0 +1,21 @@
+DirectoryIndex index.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Keep search-engine / PWA files as real files
+  RewriteRule ^(robots\.txt|sitemap\.xml|llms\.txt|manifest\.webmanifest|google043f1e47f900e950\.html|favicon\.ico|favicon-16x16\.png|favicon-32x32\.png|apple-touch-icon\.png|icon-192\.png|icon-512\.png|logo\.png)$ - [L]
+
+  # Next soft-nav / RSC payloads for any product slug → shared __view__ shell.
+  # LiteSpeed: keep the rule simple (no DOCUMENT_ROOT checks) so missing
+  # __next._tree.txt etc. rewrite instead of hard 404.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^product/(?!__view__/)([^/]+)/(__next\..+)$ /product/__view__/$2 [L,QSA]
+
+  # HTML product pages missing from the build → shared shell.
+  # ProductPageClient reads the real id from the browser URL and loads the API item.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^product/(?!__view__/)([^/]+)/?$ /product/__view__/index.html [L]
+</IfModule>

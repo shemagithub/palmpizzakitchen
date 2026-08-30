@@ -1,0 +1,31 @@
+{
+  "name": "palm-pizza-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node app.js",
+    "db:init": "node src/scripts/initDb.js",
+    "db:seed": "node src/scripts/seed.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "imapflow": "^1.7.6",
+    "jsonwebtoken": "^9.0.2",
+    "mailparser": "^3.9.16",
+    "multer": "^2.2.0",
+    "mysql2": "^3.14.3",
+    "nodemailer": "^9.0.5",
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^8.0.1"
+  }
+}
