@@ -221,6 +221,14 @@ export async function ensureSchema() {
         "size_prices",
         `ALTER TABLE \`${database}\`.offers ADD COLUMN size_prices TEXT NULL AFTER menu_item_id`,
       ],
+      [
+        "offer_type",
+        `ALTER TABLE \`${database}\`.offers ADD COLUMN offer_type VARCHAR(20) NOT NULL DEFAULT 'general' AFTER size_prices`,
+      ],
+      [
+        "eligible_categories",
+        `ALTER TABLE \`${database}\`.offers ADD COLUMN eligible_categories TEXT NULL AFTER offer_type`,
+      ],
     ];
     for (const [column, sql] of offerColumns) {
       try {

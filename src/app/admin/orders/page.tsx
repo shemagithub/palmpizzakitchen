@@ -13,6 +13,12 @@ import {
 import { statusTone } from "@/data/admin";
 import { formatPrice } from "@/data/menu";
 import { api } from "@/lib/api";
+import {
+  googleMapsUrl,
+  hasLiveLocation,
+  type OrderNotesMeta,
+} from "@/lib/orderLocation";
+import { promoCodesFromNotes } from "@/lib/offers";
 
 type OrderRow = {
   id: string;
@@ -29,6 +35,8 @@ type OrderRow = {
   paymentLabel?: string;
   paymentStatus?: string;
   fulfillment?: string;
+  notes?: string;
+  notesMeta?: OrderNotesMeta;
 };
 
 const FILTERS = [
@@ -220,6 +228,20 @@ export default function AdminOrdersPage() {
                 order.paymentStatus === "paid" &&
                 order.status !== "Delivered" &&
                 order.status !== "Cancelled";
+              const meta = order.notesMeta;
+              const mapsHref =
+                meta &&
+                googleMapsUrl({
+                  gps: meta.gps,
+                  address: order.address,
+                  area: meta.area,
+                  landmark: meta.landmark,
+                  place: meta.place,
+                });
+              const showMaps =
+                mapsHref &&
+                order.fulfillment !== "pickup" &&
+                (hasLiveLocation(meta!, order.fulfillment) || order.address);
               return (
               <div
                 key={order.id}
@@ -232,6 +254,11 @@ export default function AdminOrdersPage() {
                 >
                   <p className="text-sm font-bold text-pam-ink hover:text-pam-red">
                     {order.id}
+                    {promoCodesFromNotes(order.notes).length ? (
+                      <span className="ml-2 rounded-md bg-pam-gold/40 px-1.5 py-0.5 text-[10px] font-bold text-pam-ink align-middle">
+                        PROMO
+                      </span>
+                    ) : null}
                   </p>
                   <p className="text-xs text-pam-muted">
                     {order.customer} · {order.phone}
@@ -250,6 +277,11 @@ export default function AdminOrdersPage() {
                   <p className="mt-0.5 text-[11px] font-semibold text-pam-muted">
                     {order.fulfillment === "pickup" ? "Pickup" : "Delivery"}
                     {order.address ? ` · ${order.address}` : ""}
+                    {meta?.gps && order.fulfillment !== "pickup" ? (
+                      <span className="ml-1 font-bold text-pam-basil">
+                        · Live GPS
+                      </span>
+                    ) : null}
                   </p>
                 </button>
                 <button
@@ -285,6 +317,22 @@ export default function AdminOrdersPage() {
                   {formatPrice(order.total)}
                 </button>
                 <div className="flex flex-wrap gap-2">
+                  {showMaps ? (
+                    <a
+                      href={mapsHref!}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="rounded-xl bg-pam-basil px-3 py-2.5 text-xs font-bold text-white active:scale-[0.98]"
+                      title={
+                        meta?.gps
+                          ? "Open live GPS location in Google Maps"
+                          : "Open delivery address in Google Maps"
+                      }
+                    >
+                      Maps
+                    </a>
+                  ) : null}
                   <button
                     type="button"
                     onClick={(e) => {

@@ -1,10 +1,15 @@
 import { Router } from "express";
 import { query } from "../db.js";
 import { adminRequired } from "../middleware/auth.js";
+import {
+  parseEligibleCategories,
+  parseOfferType,
+} from "../services/offerPricing.js";
 
 const router = Router();
 
 const STATUSES = new Set(["Active", "Scheduled", "Paused"]);
+const OFFER_TYPES = new Set(["general", "bogo", "fixed_price"]);
 
 function slugifyOfferId(title) {
   const base = String(title || "offer")
@@ -27,6 +32,18 @@ function normalizeShowOnHome(value) {
   return 1;
 }
 
+function normalizeOfferType(raw) {
+  const type = String(raw || "general").trim().toLowerCase();
+  return OFFER_TYPES.has(type) ? type : "general";
+}
+
+function serializeEligibleCategories(raw) {
+  const list = Array.isArray(raw)
+    ? raw.map((c) => String(c || "").trim()).filter(Boolean)
+    : [];
+  return list.length ? JSON.stringify(list) : null;
+}
+
 function parseOfferSizePrices(raw) {
   if (raw == null || raw === "") return null;
   let data = raw;
@@ -47,14 +64,19 @@ function parseOfferSizePrices(raw) {
   if (!enabled) return null;
   const money = (v) => {
     const n = Number(v);
-    return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
+    return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
   };
   const s = money(data.s ?? data.small);
   const m = money(data.m ?? data.medium);
   const l = money(data.l ?? data.large);
+  const flat = money(data.flat ?? data.onePrice);
+  if (flat != null && s == null && m == null && l == null) {
+    return { enabled: true, flat };
+  }
   if (s == null && m == null && l == null) return null;
   return {
     enabled: true,
+    ...(flat != null ? { flat } : {}),
     ...(s != null ? { s } : {}),
     ...(m != null ? { m } : {}),
     ...(l != null ? { l } : {}),
@@ -82,12 +104,15 @@ function mapOffer(row) {
     showOnHome: row.show_on_home !== 0 && row.show_on_home !== false,
     menuItemId: row.menu_item_id || "",
     sizePrices: parseOfferSizePrices(row.size_prices),
+    offerType: parseOfferType(row.offer_type),
+    eligibleCategories: parseEligibleCategories(row.eligible_categories),
     createdAt: row.created_at || null,
   };
 }
 
 const OFFER_SELECT = `id, title, code, status, ends_on, description,
-  deal_label, terms, href, image_url, show_on_home, menu_item_id, size_prices, created_at`;
+  deal_label, terms, href, image_url, show_on_home, menu_item_id, size_prices,
+  offer_type, eligible_categories, created_at`;
 
 router.get("/", async (req, res) => {
   try {
@@ -116,6 +141,52 @@ router.get("/all", adminRequired, async (_req, res) => {
       `SELECT ${OFFER_SELECT} FROM offers ORDER BY created_at DESC`,
     );
     res.json({ offers: rows.map(mapOffer) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/** Public lookup by promo code (for order flow). */
+router.get("/code/:code", async (req, res) => {
+  try {
+    const code = String(req.params.code || "")
+      .trim()
+      .toUpperCase();
+    if (!code) {
+      return res.status(400).json({ error: "Promo code is required." });
+    }
+    const rows = await query(
+      `SELECT ${OFFER_SELECT} FROM offers WHERE code = ? LIMIT 1`,
+      [code],
+    );
+    if (!rows.length) {
+      return res.status(404).json({ error: "Offer not found." });
+    }
+    const offer = mapOffer(rows[0]);
+    if (!["Active", "Scheduled"].includes(offer.status)) {
+      return res.status(404).json({ error: "This offer is not active." });
+    }
+    res.json({ offer });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/** Public detail by id (for order flow). */
+router.get("/public/:id", async (req, res) => {
+  try {
+    const rows = await query(
+      `SELECT ${OFFER_SELECT} FROM offers WHERE id = ? LIMIT 1`,
+      [req.params.id],
+    );
+    if (!rows.length) {
+      return res.status(404).json({ error: "Offer not found." });
+    }
+    const offer = mapOffer(rows[0]);
+    if (!["Active", "Scheduled"].includes(offer.status)) {
+      return res.status(404).json({ error: "This offer is not active." });
+    }
+    res.json({ offer });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -152,6 +223,8 @@ router.post("/", adminRequired, async (req, res) => {
       showOnHome = true,
       menuItemId,
       sizePrices,
+      offerType = "general",
+      eligibleCategories,
     } = req.body || {};
 
     if (!title?.trim() || !code?.trim() || !ends?.trim()) {
@@ -165,6 +238,7 @@ router.post("/", adminRequired, async (req, res) => {
 
     const offerId = (id?.trim() || slugifyOfferId(title)).slice(0, 40);
     const offerCode = String(code).trim().toUpperCase();
+    const type = normalizeOfferType(offerType);
 
     const existingCode = await query(`SELECT id FROM offers WHERE code = ?`, [
       offerCode,
@@ -184,8 +258,8 @@ router.post("/", adminRequired, async (req, res) => {
 
     await query(
       `INSERT INTO offers
-        (id, title, code, status, ends_on, description, deal_label, terms, href, image_url, show_on_home, menu_item_id, size_prices)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, title, code, status, ends_on, description, deal_label, terms, href, image_url, show_on_home, menu_item_id, size_prices, offer_type, eligible_categories)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         offerId,
         title.trim(),
@@ -200,6 +274,8 @@ router.post("/", adminRequired, async (req, res) => {
         normalizeShowOnHome(showOnHome),
         menuItemId?.trim() || null,
         serializeOfferSizePrices(sizePrices),
+        type,
+        serializeEligibleCategories(eligibleCategories),
       ],
     );
 
@@ -280,6 +356,14 @@ router.patch("/:id", adminRequired, async (req, res) => {
     if (body.sizePrices !== undefined) {
       updates.push(`size_prices = ?`);
       params.push(serializeOfferSizePrices(body.sizePrices));
+    }
+    if (body.offerType !== undefined) {
+      updates.push(`offer_type = ?`);
+      params.push(normalizeOfferType(body.offerType));
+    }
+    if (body.eligibleCategories !== undefined) {
+      updates.push(`eligible_categories = ?`);
+      params.push(serializeEligibleCategories(body.eligibleCategories));
     }
     if (!updates.length) {
       return res.status(400).json({ error: "No fields to update." });

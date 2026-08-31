@@ -2,6 +2,8 @@ export type ProductSizeId = "s" | "m" | "l";
 
 export type ProductSizePrices = {
   enabled: boolean;
+  /** Single promo price — no size picker (e.g. burgers). */
+  flat?: number;
   s?: number;
   m?: number;
   l?: number;
@@ -465,7 +467,7 @@ export function formatPrice(value: number) {
 
 function asMoney(value: unknown) {
   const n = Number(value);
-  return Number.isFinite(n) && n >= 0 ? n : null;
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
 }
 
 function isSizesFlagOn(value: unknown) {
@@ -479,12 +481,17 @@ export function normalizeSizePrices(
   if (!raw || typeof raw !== "object") return undefined;
   const data = raw as Record<string, unknown>;
   if (!isSizesFlagOn(data.enabled)) return undefined;
+  const flat = asMoney(data.flat ?? data.onePrice);
   const s = asMoney(data.s ?? data.small);
   const m = asMoney(data.m ?? data.medium);
   const l = asMoney(data.l ?? data.large);
+  if (flat != null && s == null && m == null && l == null) {
+    return { enabled: true, flat };
+  }
   if (s == null && m == null && l == null) return undefined;
   return {
     enabled: true,
+    ...(flat != null ? { flat } : {}),
     ...(s != null ? { s } : {}),
     ...(m != null ? { m } : {}),
     ...(l != null ? { l } : {}),

@@ -206,7 +206,7 @@ export default function ProfileMenu({
 
           <div className="p-1.5">
             <Link
-              href="/account"
+              href="/account?manage=1"
               role="menuitem"
               onClick={go}
               className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-pam-ink transition hover:bg-pam-sand"

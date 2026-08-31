@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import AdminShell from "@/components/AdminShell";
+import DeliveryAreasEditor from "@/components/admin/DeliveryAreasEditor";
 import MenuImageField from "@/components/admin/MenuImageField";
 import {
   AdminAlert,
@@ -30,7 +31,6 @@ export default function AdminSettingsPage() {
   const [areaFees, setAreaFees] = useState<DeliveryAreaFee[]>(
     defaultDeliveryAreaFees(Number(DEFAULT_SITE_SETTINGS.delivery_fee)),
   );
-  const [newAreaName, setNewAreaName] = useState("");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -66,35 +66,6 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const addArea = () => {
-    const name = newAreaName.trim();
-    if (!name) {
-      setError("Enter an area name.");
-      return;
-    }
-    if (
-      areaFees.some((row) => row.area.toLowerCase() === name.toLowerCase())
-    ) {
-      setError("That delivery area already exists.");
-      return;
-    }
-    setAreaFees((rows) => [
-      ...rows,
-      { area: name, fee: Number(form.delivery_fee) || 1500 },
-    ]);
-    setNewAreaName("");
-    setError("");
-  };
-
-  const removeArea = (area: string) => {
-    if (areaFees.length <= 1) {
-      setError("Keep at least one delivery area.");
-      return;
-    }
-    setAreaFees((rows) => rows.filter((row) => row.area !== area));
-    setError("");
-  };
 
   const save = async () => {
     setError("");
@@ -394,91 +365,21 @@ export default function AdminSettingsPage() {
                 </div>
               </div>
 
-              <div>
-                <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold text-pam-ink">
-                      Delivery fee by area
-                    </p>
-                    <p className="text-xs text-pam-muted">
-                      Add sectors and set a delivery fee for each. Customers
-                      pick from this list at checkout.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setAreaFees(
-                        defaultDeliveryAreaFees(Number(form.delivery_fee) || 1500),
-                      )
-                    }
-                    className="text-xs font-bold text-pam-red underline"
-                  >
-                    Reset to default list
-                  </button>
-                </div>
-                <div className="mb-3 flex flex-wrap gap-2">
-                  <input
-                    className="input-field min-w-0 flex-1 rounded-xl text-sm"
-                    value={newAreaName}
-                    onChange={(e) => setNewAreaName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addArea();
-                      }
-                    }}
-                    placeholder="New area name, e.g. Kabeza"
-                  />
-                  <button
-                    type="button"
-                    onClick={addArea}
-                    className="rounded-xl bg-pam-ink px-4 py-2.5 text-sm font-bold text-white"
-                  >
-                    Add area
-                  </button>
-                </div>
-                <div className="max-h-72 space-y-2 overflow-y-auto rounded-2xl border border-pam-border bg-pam-sand/30 p-3">
-                  {areaFees.map((row) => (
-                    <div
-                      key={row.area}
-                      className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2.5"
-                    >
-                      <span className="min-w-0 flex-1 text-sm font-semibold text-pam-ink">
-                        {row.area}
-                      </span>
-                      <input
-                        type="number"
-                        min={0}
-                        step={100}
-                        aria-label={`Delivery fee for ${row.area}`}
-                        className="input-field w-28 rounded-xl py-2 text-right text-sm"
-                        value={row.fee}
-                        onChange={(e) => {
-                          const fee = Math.max(
-                            0,
-                            Math.round(Number(e.target.value) || 0),
-                          );
-                          setAreaFees((rows) =>
-                            rows.map((item) =>
-                              item.area === row.area ? { ...item, fee } : item,
-                            ),
-                          );
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeArea(row.area)}
-                        className="shrink-0 rounded-lg px-2 py-1 text-xs font-bold text-pam-muted hover:bg-pam-sand hover:text-pam-red"
-                        aria-label={`Remove ${row.area}`}
-                        title="Remove area"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <DeliveryAreasEditor
+                areas={areaFees}
+                defaultFee={Number(form.delivery_fee) || 1500}
+                onChange={(rows) => {
+                  setAreaFees(rows);
+                  setError("");
+                }}
+                onResetDefaults={() => {
+                  setAreaFees(
+                    defaultDeliveryAreaFees(Number(form.delivery_fee) || 1500),
+                  );
+                  setError("");
+                }}
+                onError={setError}
+              />
               <div>
                 <label className="mb-1.5 block text-sm font-semibold">
                   Kitchen note

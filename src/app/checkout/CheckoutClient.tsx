@@ -24,6 +24,7 @@ import {
   type DeliveryAreaFee,
 } from "@/lib/deliveryAreas";
 import { orderBlockReason } from "@/lib/orderRules";
+import { promoLineBadge } from "@/lib/offers";
 
 type CartLine = GuestCartLine;
 
@@ -403,10 +404,15 @@ export default function CheckoutClient() {
             size: i.size,
             unitPrice: i.price,
             comboChoices: i.comboChoices,
+            offerBundle: i.offerBundle,
           })),
           notes: [
             `pay:${methodLabel}`,
             fulfillment === "pickup" ? "fulfillment:pickup" : "fulfillment:delivery",
+            ...items
+              .map((i) => i.offerBundle?.offerCode)
+              .filter(Boolean)
+              .map((code) => `promo:${code}`),
             area ? `area:${area}` : "",
             landmark ? `landmark:${landmark}` : "",
             coords
@@ -530,7 +536,7 @@ export default function CheckoutClient() {
           )}
           {items.map((item) => (
             <div
-              key={`${item.id}-${item.size || ""}-${(item.comboChoices || [])
+              key={`${item.id}-${item.size || ""}-${item.offerBundle?.offerId || ""}-${(item.comboChoices || [])
                 .map((c) => c.itemId)
                 .join("_")}`}
               className="flex justify-between gap-3"
@@ -541,6 +547,11 @@ export default function CheckoutClient() {
                 </span>
                 <span className="text-xs text-pam-muted">
                   {formatPrice(Number(item.price))} each
+                  {item.offerBundle ? (
+                    <span className="ml-2 font-bold text-pam-red">
+                      {promoLineBadge(item.name, item.offerBundle.offerCode)}
+                    </span>
+                  ) : null}
                 </span>
               </span>
               <span className="shrink-0 font-semibold">

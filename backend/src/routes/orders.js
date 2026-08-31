@@ -12,6 +12,10 @@ import {
   extractAreaFromOrderInput,
   resolveDeliveryFee,
 } from "../services/deliveryFees.js";
+import {
+  loadActiveOffer,
+  resolveOfferBundleLine,
+} from "../services/offerPricing.js";
 
 function asSize(value) {
   const raw = String(value || "").toLowerCase();
@@ -288,15 +292,31 @@ function parseOrderNotes(notes) {
     paymentHint: "",
     area: "",
     landmark: "",
+    place: "",
     gps: "",
+    accuracyMeters: null,
+    fulfillment: "",
     extra: [],
   };
   for (const part of parts) {
     if (part.startsWith("pay:")) meta.paymentHint = part.slice(4).trim();
     else if (part.startsWith("area:")) meta.area = part.slice(5).trim();
     else if (part.startsWith("landmark:")) meta.landmark = part.slice(9).trim();
-    else if (part.startsWith("gps:")) meta.gps = part.slice(4).trim();
-    else meta.extra.push(part);
+    else if (part.startsWith("place:")) meta.place = part.slice(6).trim();
+    else if (part.startsWith("fulfillment:")) {
+      const value = part.slice(12).trim().toLowerCase();
+      meta.fulfillment = value === "pickup" ? "pickup" : "delivery";
+    } else if (part.startsWith("live-gps:") || part.startsWith("gps:")) {
+      const payload = part.includes("live-gps:")
+        ? part.slice("live-gps:".length)
+        : part.slice(4);
+      const [coordsPart, accPart] = payload.split("|acc:");
+      meta.gps = coordsPart.trim();
+      if (accPart) {
+        const match = accPart.match(/(\d+)/);
+        if (match) meta.accuracyMeters = Number(match[1]);
+      }
+    } else meta.extra.push(part);
   }
   return meta;
 }
@@ -480,6 +500,8 @@ router.get("/", adminRequired, async (req, res) => {
         status: order.status,
         kitchenLabel: kitchenLabel(order),
         fulfillment: isPickupOrder(order) ? "pickup" : "delivery",
+        notesMeta: parseOrderNotes(order.notes),
+        notes: order.notes || "",
         total: Number(order.total),
         time: order.created_at,
         items: items
@@ -650,7 +672,49 @@ router.post("/", optionalAuth, async (req, res) => {
 
     let subtotal = 0;
     const lineItems = [];
+    const promoCodes = new Set();
     for (const line of items) {
+      const bundle = line.offerBundle;
+      if (bundle?.offerId) {
+        const loaded = await loadActiveOffer(String(bundle.offerId));
+        if (loaded.error) {
+          return res.status(400).json({ error: loaded.error });
+        }
+        const paidId = String(bundle.paidItemId || line.itemId || "").trim();
+        const freeId = String(bundle.freeItemId || "").trim();
+        const paidRows = paidId
+          ? await query(
+              `SELECT id, name, price, details, category FROM menu_items WHERE id = ? AND active = 1`,
+              [paidId],
+            )
+          : [];
+        const freeRows = freeId
+          ? await query(
+              `SELECT id, name, price, details, category FROM menu_items WHERE id = ? AND active = 1`,
+              [freeId],
+            )
+          : [];
+        const resolved = resolveOfferBundleLine(
+          loaded.offer,
+          paidRows[0],
+          freeRows[0],
+          bundle,
+        );
+        if (resolved.error) {
+          return res.status(400).json({ error: resolved.error });
+        }
+        const qty = Math.max(1, Number(line.quantity) || 1);
+        subtotal += resolved.unitPrice * qty;
+        if (resolved.offerCode) promoCodes.add(resolved.offerCode);
+        lineItems.push({
+          itemId: resolved.itemId,
+          name: resolved.name,
+          unitPrice: resolved.unitPrice,
+          quantity: qty,
+        });
+        continue;
+      }
+
       const parsed = resolveMenuItemId(line.itemId);
       let size = asSize(line.size) || parsed.size;
       const rows = await query(
@@ -715,6 +779,7 @@ router.post("/", optionalAuth, async (req, res) => {
 
     const orderNotes = [
       fulfillment === "pickup" ? "fulfillment:pickup" : "fulfillment:delivery",
+      promoCodes.size ? `promo:${[...promoCodes].join(",")}` : "",
       notes || "",
     ]
       .filter(Boolean)

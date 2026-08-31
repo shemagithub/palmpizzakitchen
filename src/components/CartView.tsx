@@ -85,9 +85,16 @@ export default function CartView() {
 
   const sameLine = (
     a: CartLine,
-    b: Pick<CartLine, "id" | "size" | "comboChoices">,
+    b: Pick<CartLine, "id" | "size" | "comboChoices" | "offerBundle">,
   ) => {
     if (a.id !== b.id || (a.size || "") !== (b.size || "")) return false;
+    const aOffer = a.offerBundle
+      ? `${a.offerBundle.offerId}:${a.offerBundle.paidItemId}:${a.offerBundle.freeItemId || ""}`
+      : "";
+    const bOffer = b.offerBundle
+      ? `${b.offerBundle.offerId}:${b.offerBundle.paidItemId}:${b.offerBundle.freeItemId || ""}`
+      : "";
+    if (aOffer !== bOffer) return false;
     const aKey = (a.comboChoices || [])
       .map((c) => `${c.slotId}=${c.itemId}`)
       .sort()
@@ -100,7 +107,7 @@ export default function CartView() {
   };
 
   const isLocalOnlyLine = (line: CartLine) =>
-    Boolean(line.size || line.comboChoices?.length);
+    Boolean(line.size || line.comboChoices?.length || line.offerBundle);
 
   const persistLocalAware = (next: CartLine[]) => {
     setItems(next);
@@ -233,7 +240,16 @@ export default function CartView() {
                     {item.name}
                   </a>
                   <p className="mt-0.5 text-xs font-semibold text-pam-muted">
-                    Tap for details
+                    {item.offerBundle ? (
+                      <span className="text-pam-red">
+                        Promo {item.offerBundle.offerCode}
+                        {item.offerBundle.offerType === "bogo"
+                          ? " · BOGO"
+                          : " · Deal price"}
+                      </span>
+                    ) : (
+                      "Tap for details"
+                    )}
                   </p>
                 </div>
                 <button

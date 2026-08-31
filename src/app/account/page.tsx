@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import AccountForm from "@/components/AccountForm";
+import AccountLandingRedirect from "@/components/AccountLandingRedirect";
 import BrandLogo from "@/components/BrandLogo";
 import { privatePageMeta } from "@/lib/seo";
 
@@ -24,6 +25,10 @@ export default function AccountPage() {
             </p>
           </div>
         </div>
+
+        <Suspense fallback={null}>
+          <AccountLandingRedirect />
+        </Suspense>
 
         <Suspense
           fallback={

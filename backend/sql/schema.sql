@@ -57,6 +57,8 @@ CREATE TABLE IF NOT EXISTS offers (
   show_on_home TINYINT(1) NOT NULL DEFAULT 1,
   menu_item_id VARCHAR(40) NULL,
   size_prices TEXT NULL,
+  offer_type VARCHAR(20) NOT NULL DEFAULT 'general',
+  eligible_categories TEXT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 

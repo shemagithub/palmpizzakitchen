@@ -4,6 +4,16 @@ import { useEffect, useState } from "react";
 import { statusTone } from "@/data/admin";
 import { formatPrice } from "@/data/menu";
 import { api } from "@/lib/api";
+import {
+  googleMapsUrl,
+  hasLiveLocation,
+  type OrderNotesMeta,
+} from "@/lib/orderLocation";
+import {
+  isPromoOrderLineName,
+  promoCodesFromNotes,
+  promoLineBadge,
+} from "@/lib/offers";
 
 export type OrderDetail = {
   id: string;
@@ -22,13 +32,7 @@ export type OrderDetail = {
   deliveryFee: number;
   total: number;
   notes: string;
-  notesMeta: {
-    paymentHint: string;
-    area: string;
-    landmark: string;
-    gps: string;
-    extra: string[];
-  };
+  notesMeta: OrderNotesMeta;
   time: string;
   updatedAt?: string;
   userId?: number | null;
@@ -246,6 +250,46 @@ export default function OrderDetailModal({
 
           {order && !loading && (
             <div className="space-y-4">
+              {(() => {
+                const mapsHref = googleMapsUrl({
+                  gps: order.notesMeta.gps,
+                  address: order.address,
+                  area: order.notesMeta.area,
+                  landmark: order.notesMeta.landmark,
+                  place: order.notesMeta.place,
+                });
+                const live = hasLiveLocation(
+                  order.notesMeta,
+                  order.fulfillment,
+                );
+                if (!mapsHref || order.fulfillment === "pickup") return null;
+                return (
+                  <a
+                    href={mapsHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-pam-basil/30 bg-pam-basil/10 px-4 py-3.5 transition hover:bg-pam-basil/15"
+                  >
+                    <div>
+                      <p className="text-sm font-bold text-pam-ink">
+                        {live ? "Open live customer location" : "Open in Google Maps"}
+                      </p>
+                      <p className="mt-0.5 text-xs text-pam-muted">
+                        {live
+                          ? order.notesMeta.gps
+                          : order.address || "Delivery address"}
+                        {order.notesMeta.accuracyMeters
+                          ? ` · ±${order.notesMeta.accuracyMeters}m`
+                          : ""}
+                      </p>
+                    </div>
+                    <span className="rounded-xl bg-pam-basil px-3 py-2 text-xs font-bold text-white">
+                      Google Maps →
+                    </span>
+                  </a>
+                );
+              })()}
+
               <section className="rounded-2xl border border-pam-border/70 bg-pam-sand/30 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-sm font-extrabold text-pam-ink">
@@ -307,20 +351,26 @@ export default function OrderDetailModal({
                       </dd>
                     </div>
                   )}
-                  {order.notesMeta.gps && (
-                    <div className="sm:col-span-2">
+                  {order.notesMeta.place && (
+                    <div>
                       <dt className="text-[11px] font-bold tracking-wide text-pam-muted uppercase">
-                        GPS pin
+                        Near
                       </dt>
                       <dd className="mt-0.5 text-sm font-semibold text-pam-ink">
-                        <a
-                          href={`https://www.google.com/maps?q=${encodeURIComponent(order.notesMeta.gps)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-bold text-pam-red"
-                        >
-                          Open in Maps ({order.notesMeta.gps})
-                        </a>
+                        {order.notesMeta.place}
+                      </dd>
+                    </div>
+                  )}
+                  {order.notesMeta.gps && order.fulfillment !== "pickup" && (
+                    <div className="sm:col-span-2">
+                      <dt className="text-[11px] font-bold tracking-wide text-pam-muted uppercase">
+                        GPS coordinates
+                      </dt>
+                      <dd className="mt-0.5 text-sm font-semibold text-pam-ink">
+                        {order.notesMeta.gps}
+                        {order.notesMeta.accuracyMeters
+                          ? ` (±${order.notesMeta.accuracyMeters} m)`
+                          : ""}
                       </dd>
                     </div>
                   )}
@@ -364,11 +414,22 @@ export default function OrderDetailModal({
               </section>
 
               <section className="rounded-2xl border border-pam-border/70 p-4">
-                <h3 className="text-sm font-extrabold text-pam-ink">
-                  Food ordered
-                </h3>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-extrabold text-pam-ink">
+                    Food ordered
+                  </h3>
+                  {promoCodesFromNotes(order.notes).length ? (
+                    <span className="rounded-full bg-pam-gold/30 px-2.5 py-1 text-[10px] font-bold text-pam-ink uppercase">
+                      Promo · {promoCodesFromNotes(order.notes).join(", ")}
+                    </span>
+                  ) : null}
+                </div>
                 <ul className="mt-3 divide-y divide-pam-border/70">
-                  {order.lineItems.map((line, i) => (
+                  {order.lineItems.map((line, i) => {
+                    const promoBadge = isPromoOrderLineName(line.name)
+                      ? promoLineBadge(line.name)
+                      : "";
+                    return (
                     <li
                       key={`${line.name}-${i}`}
                       className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
@@ -379,13 +440,19 @@ export default function OrderDetailModal({
                         </p>
                         <p className="text-xs text-pam-muted">
                           {formatPrice(line.unitPrice)} × {line.quantity}
+                          {promoBadge ? (
+                            <span className="ml-2 rounded-md bg-pam-red/10 px-1.5 py-0.5 font-bold text-pam-red">
+                              {promoBadge}
+                            </span>
+                          ) : null}
                         </p>
                       </div>
                       <p className="shrink-0 text-sm font-bold text-pam-ink">
                         {formatPrice(line.lineTotal)}
                       </p>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
 
                 <div className="mt-3 space-y-1.5 border-t border-pam-border/70 pt-3 text-sm">

@@ -98,7 +98,7 @@ function ResetPasswordForm() {
       }
       setSuccess(data.message || "Password updated. Signing you in…");
       window.setTimeout(() => {
-        router.replace(data.user?.role === "admin" ? "/admin" : "/account");
+        router.replace(data.user?.role === "admin" ? "/admin" : "/");
       }, 900);
     } catch (err) {
       const apiErr = err as Error & {

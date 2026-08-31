@@ -19,9 +19,13 @@ import { api, resolveMediaUrl } from "@/lib/api";
 import {
   buildPromoSizePrices,
   DEAL_TEMPLATES,
+  ELIGIBLE_CATEGORY_OPTIONS,
+  OFFER_TYPE_OPTIONS,
   promoSizeFormFromRecord,
-  validatePromoSizeForm,
+  validateOfferForm,
+  hasOfferPromoPricing,
   type OfferRecord,
+  type OfferType,
   type PromoSizeForm,
 } from "@/lib/offers";
 
@@ -40,6 +44,8 @@ type OfferForm = {
   image: string;
   showOnHome: boolean;
   menuItemId: string;
+  offerType: OfferType;
+  eligibleCategories: string[];
   sizeForm: PromoSizeForm;
 };
 
@@ -56,8 +62,12 @@ const EMPTY_FORM: OfferForm = {
   image: "",
   showOnHome: true,
   menuItemId: "",
+  offerType: "general",
+  eligibleCategories: [],
   sizeForm: {
     sizesEnabled: false,
+    priceMode: "per_size" as const,
+    priceFlat: "",
     priceSmall: "",
     priceMedium: "",
     priceLarge: "",
@@ -115,17 +125,32 @@ export default function AdminOffersPage() {
   const copySizesFromMenu = () => {
     const item = menuItems.find((row) => row.id === form.menuItemId);
     if (!item) {
-      setError("Pick a menu item first, then copy its size prices.");
+      setError("Pick a menu item first, then copy its prices.");
       return;
     }
     const sizes = getEnabledSizes(item);
     if (!sizes) {
-      setError("That menu item has no size prices yet. Set them under Menu first.");
+      setForm((f) => ({
+        ...f,
+        sizeForm: {
+          sizesEnabled: true,
+          priceMode: "flat",
+          priceFlat: String(item.price || ""),
+          priceSmall: "",
+          priceMedium: "",
+          priceLarge: "",
+        },
+        href: f.href || `/product/${item.id}`,
+      }));
+      setError("");
       return;
     }
     setForm((f) => ({
       ...f,
-      sizeForm: promoSizeFormFromRecord(sizes),
+      sizeForm: {
+        ...promoSizeFormFromRecord(sizes),
+        priceMode: "per_size",
+      },
       href: f.href || `/product/${item.id}`,
     }));
     setError("");
@@ -158,6 +183,28 @@ export default function AdminOffersPage() {
         href: t.href,
         image: t.image,
         ends: "Ongoing",
+        offerType: t.offerType || "general",
+        eligibleCategories: t.eligibleCategories || [],
+        sizeForm:
+          t.id === "bogo-burger"
+            ? {
+                sizesEnabled: true,
+                priceMode: "flat",
+                priceFlat: "5500",
+                priceSmall: "",
+                priceMedium: "",
+                priceLarge: "",
+              }
+            : t.id === "bogo-pizza" || t.id === "weekday-lunch"
+              ? {
+                  sizesEnabled: true,
+                  priceMode: "per_size",
+                  priceFlat: "",
+                  priceSmall: "",
+                  priceMedium: "10000",
+                  priceLarge: "12000",
+                }
+              : EMPTY_FORM.sizeForm,
       });
     } else {
       setForm(EMPTY_FORM);
@@ -184,6 +231,8 @@ export default function AdminOffersPage() {
       image: offer.image || "",
       showOnHome: offer.showOnHome !== false,
       menuItemId: offer.menuItemId || "",
+      offerType: (offer.offerType || "general") as OfferType,
+      eligibleCategories: offer.eligibleCategories || [],
       sizeForm: promoSizeFormFromRecord(offer.sizePrices),
     });
     setViewOffer(null);
@@ -206,8 +255,12 @@ export default function AdminOffersPage() {
       if (!form.title.trim() || !form.code.trim() || !form.ends.trim()) {
         throw new Error("Title, promo code, and end date are required.");
       }
-      const sizeError = validatePromoSizeForm(form.sizeForm);
-      if (sizeError) throw new Error(sizeError);
+      const formError = validateOfferForm({
+        offerType: form.offerType,
+        eligibleCategories: form.eligibleCategories,
+        sizeForm: form.sizeForm,
+      });
+      if (formError) throw new Error(formError);
 
       const payload = {
         title: form.title.trim(),
@@ -222,6 +275,8 @@ export default function AdminOffersPage() {
         showOnHome: form.showOnHome,
         menuItemId: form.menuItemId.trim() || null,
         sizePrices: buildPromoSizePrices(form.sizeForm),
+        offerType: form.offerType,
+        eligibleCategories: form.eligibleCategories,
       };
 
       if (editingId) {
@@ -408,10 +463,17 @@ export default function AdminOffersPage() {
               <p className="mt-3 inline-flex w-fit rounded-xl bg-pam-sand px-3 py-1.5 font-mono text-sm font-bold tracking-wide">
                 {offer.code}
               </p>
+              {offer.offerType && offer.offerType !== "general" ? (
+                <p className="mt-2 text-xs font-bold text-pam-red uppercase">
+                  {offer.offerType === "bogo"
+                    ? "Buy 1 · Get 1 — customer picks products"
+                    : "Fixed promo price — customer picks product"}
+                </p>
+              ) : null}
               <p className="mt-3 line-clamp-2 text-sm text-pam-muted">
                 {offer.description || "No description yet."}
               </p>
-              {offer.sizePrices ? (
+              {hasOfferPromoPricing(offer) ? (
                 <div className="mt-3">
                   <PromoSizePriceRowLight sizes={offer.sizePrices} />
                 </div>
@@ -554,7 +616,7 @@ export default function AdminOffersPage() {
                   {viewOffer.description || "No description."}
                 </dd>
               </div>
-              {viewOffer.sizePrices ? (
+              {viewOffer && hasOfferPromoPricing(viewOffer) ? (
                 <div>
                   <dt className="text-xs font-bold text-pam-muted uppercase">
                     Promo prices
@@ -730,6 +792,74 @@ export default function AdminOffersPage() {
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-semibold">
+                  Offer type
+                </label>
+                <select
+                  className="input-field rounded-2xl"
+                  value={form.offerType}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      offerType: e.target.value as OfferType,
+                    }))
+                  }
+                >
+                  {OFFER_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[11px] text-pam-muted">
+                  {
+                    OFFER_TYPE_OPTIONS.find((o) => o.id === form.offerType)
+                      ?.hint
+                  }
+                </p>
+              </div>
+
+              {(form.offerType === "bogo" ||
+                form.offerType === "fixed_price") && (
+                <div className="rounded-2xl border border-pam-border bg-pam-sand/30 p-4">
+                  <p className="text-sm font-semibold text-pam-ink">
+                    Which products can customers pick?
+                  </p>
+                  <p className="mt-1 text-xs text-pam-muted">
+                    Names come from your menu. Tick the categories included in
+                    this deal.
+                  </p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {ELIGIBLE_CATEGORY_OPTIONS.map((cat) => {
+                      const checked = form.eligibleCategories.includes(cat.id);
+                      return (
+                        <label
+                          key={cat.id}
+                          className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm ring-1 ring-pam-border/80"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              setForm((f) => ({
+                                ...f,
+                                eligibleCategories: checked
+                                  ? f.eligibleCategories.filter(
+                                      (c) => c !== cat.id,
+                                    )
+                                  : [...f.eligibleCategories, cat.id],
+                              }));
+                            }}
+                          />
+                          <span>{cat.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold">
                   Linked menu item (optional)
                 </label>
                 <select
@@ -747,14 +877,19 @@ export default function AdminOffersPage() {
                   ))}
                 </select>
                 <p className="mt-1 text-[11px] text-pam-muted">
-                  Link a pizza or burger to copy its Small / Medium / Large
-                  prices into this promo.
+                  {form.offerType === "general"
+                    ? "General promos use this link when customers tap Order."
+                    : "Optional — copy size prices from a menu item, or enter promo prices below."}
                 </p>
               </div>
 
               <PromoSizeFields
                 form={form.sizeForm}
                 onChange={(sizeForm) => setForm((f) => ({ ...f, sizeForm }))}
+                burgerStyle={
+                  form.eligibleCategories.length === 1 &&
+                  form.eligibleCategories[0] === "burger"
+                }
                 onCopyFromMenu={
                   form.menuItemId ? () => copySizesFromMenu() : undefined
                 }

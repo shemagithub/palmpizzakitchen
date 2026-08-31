@@ -186,7 +186,7 @@ export default function AccountForm({
           setSuccess(`Welcome, ${data.user.name.split(" ")[0]}!`);
           window.setTimeout(() => {
             window.location.href =
-              data.user!.role === "admin" ? "/admin" : "/account";
+              data.user!.role === "admin" ? "/admin" : "/";
           }, 700);
         }
         return;
@@ -209,7 +209,7 @@ export default function AccountForm({
         }, 700);
       } else {
         window.setTimeout(() => {
-          window.location.href = "/account";
+          window.location.href = "/";
         }, 500);
       }
     } catch (err) {

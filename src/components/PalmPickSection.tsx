@@ -5,6 +5,24 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import PalmPickExperience from "@/components/PalmPickExperience";
 
+/** Floating picker only on home + menu category listings — not product/cart/checkout. */
+const PALM_PICK_FAB_PATHS = [
+  "/",
+  "/pizzas",
+  "/burgers",
+  "/sides",
+  "/drinks",
+  "/combos",
+] as const;
+
+export function palmPickFabVisible(pathname: string) {
+  const path = pathname.replace(/\/$/, "") || "/";
+  return PALM_PICK_FAB_PATHS.some((allowed) => {
+    if (allowed === "/") return path === "/";
+    return path === allowed || path.startsWith(`${allowed}/`);
+  });
+}
+
 export default function PalmPickSection() {
   return (
     <section className="border-y border-pam-border bg-pam-sand py-10 sm:py-14">
@@ -37,11 +55,7 @@ export function PalmPickFab() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const hidden =
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/checkout") ||
-    pathname.startsWith("/pick");
-  if (hidden) return null;
+  if (!palmPickFabVisible(pathname)) return null;
 
   if (open) {
     return (

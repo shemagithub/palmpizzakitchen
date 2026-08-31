@@ -364,7 +364,7 @@ const OFFERS = [
     status: "Active",
     ends_on: "Ongoing",
     description:
-      "Order any burger and get a second burger free — same burger or equal value.",
+      "Order any burger and get a second burger free — pick both from the menu.",
     deal_label: "Buy 1 · Get 1 Free",
     terms:
       "Valid on burgers only. Free item must be same burger or equal/lower price.",
@@ -372,7 +372,33 @@ const OFFERS = [
     image_url: "/promo-2.jpg",
     show_on_home: 1,
     menu_item_id: null,
-    size_prices: JSON.stringify({ enabled: true, s: 4500, m: 5500, l: 6500 }),
+    size_prices: JSON.stringify({ enabled: true, flat: 5500 }),
+    offer_type: "bogo",
+    eligible_categories: JSON.stringify(["burger"]),
+  },
+  {
+    id: "OFF-BOGO-PIZZA",
+    title: "Pizza BOGO",
+    code: "BOGOPIZZA",
+    status: "Active",
+    ends_on: "Ongoing",
+    description:
+      "Choose the pizza you pay for and pick another pizza free.",
+    deal_label: "Buy 1 · Get 1 Free",
+    terms:
+      "Valid on classic, cheese, veggie & meat pizzas. Free pizza same size or cheaper.",
+    href: "/pizzas",
+    image_url: "/promo-1.jpg",
+    show_on_home: 1,
+    menu_item_id: null,
+    size_prices: JSON.stringify({ enabled: true, m: 10000, l: 12000 }),
+    offer_type: "bogo",
+    eligible_categories: JSON.stringify([
+      "classic",
+      "cheese",
+      "veggie",
+      "meat",
+    ]),
   },
   {
     id: "OFF-01",
@@ -404,11 +430,19 @@ const OFFERS = [
     code: "LUNCH12",
     status: "Scheduled",
     ends_on: "Sep 15, 2026",
-    description: "Lunch specials Mon–Fri before 3 PM.",
+    description: "Lunch specials Mon–Fri before 3 PM — pick your pizza.",
     deal_label: "Mon–Fri · Before 3 PM",
     href: "/pizzas",
     image_url: "/promo-3.jpg",
     show_on_home: 0,
+    offer_type: "fixed_price",
+    eligible_categories: JSON.stringify([
+      "classic",
+      "cheese",
+      "veggie",
+      "meat",
+    ]),
+    size_prices: JSON.stringify({ enabled: true, s: 8000, m: 10000, l: 12000 }),
   },
 ];
 
@@ -479,8 +513,8 @@ async function seed() {
   for (const offer of OFFERS) {
     await query(
       `INSERT INTO offers
-        (id, title, code, status, ends_on, description, deal_label, terms, href, image_url, show_on_home, menu_item_id, size_prices)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, title, code, status, ends_on, description, deal_label, terms, href, image_url, show_on_home, menu_item_id, size_prices, offer_type, eligible_categories)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
          title = VALUES(title),
          status = VALUES(status),
@@ -492,7 +526,9 @@ async function seed() {
          image_url = VALUES(image_url),
          show_on_home = VALUES(show_on_home),
          menu_item_id = VALUES(menu_item_id),
-         size_prices = VALUES(size_prices)`,
+         size_prices = VALUES(size_prices),
+         offer_type = VALUES(offer_type),
+         eligible_categories = VALUES(eligible_categories)`,
       [
         offer.id,
         offer.title,
@@ -507,6 +543,8 @@ async function seed() {
         offer.show_on_home ?? 1,
         offer.menu_item_id || null,
         offer.size_prices || null,
+        offer.offer_type || "general",
+        offer.eligible_categories || null,
       ],
     );
   }

@@ -6,7 +6,7 @@ import PageHero from "@/components/PageHero";
 import ResolvedMenuImage from "@/components/ResolvedMenuImage";
 import { PromoSizePriceRowLight } from "@/components/PromoSizePriceRow";
 import { api } from "@/lib/api";
-import { offerHref, type OfferRecord } from "@/lib/offers";
+import { offerHref, isOrderableOffer, hasOfferPromoPricing, type OfferRecord } from "@/lib/offers";
 
 export default function OffersClient() {
   const [offers, setOffers] = useState<OfferRecord[]>([]);
@@ -23,7 +23,7 @@ export default function OffersClient() {
     <>
       <PageHero
         title="Offers & deals"
-        subtitle="Buy-one-get-one burgers, combo savings, free delivery, and more — tap a deal, copy the code, and order."
+        subtitle="Buy-one-get-one burgers & pizzas, fixed promo prices by size — pick your items from the menu and checkout at the deal price."
       />
       <section className="bg-pam-warm py-10 md:py-14">
         <div className="mx-auto max-w-[1600px] px-5 md:px-8">
@@ -82,7 +82,7 @@ export default function OffersClient() {
                         {offer.description}
                       </p>
                     ) : null}
-                    {offer.sizePrices ? (
+                    {hasOfferPromoPricing(offer) ? (
                       <div className="mt-4">
                         <p className="mb-2 text-[11px] font-bold tracking-wide text-pam-muted uppercase">
                           Promo prices
@@ -102,7 +102,9 @@ export default function OffersClient() {
                       href={offerHref(offer)}
                       className="mt-6 inline-flex rounded-full bg-pam-red px-5 py-3 text-sm font-bold text-white"
                     >
-                      Order with this deal →
+                      {isOrderableOffer(offer)
+                        ? "Pick items & order →"
+                        : "Order with this deal →"}
                     </Link>
                   </div>
                 </article>

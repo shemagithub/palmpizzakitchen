@@ -1,6 +1,7 @@
 import { api, getToken } from "@/lib/api";
 import type { ComboChoice, MenuItem, ProductSizeId } from "@/data/menu";
 import { comboChoicesKey } from "@/data/menu";
+import type { OfferBundleMeta } from "@/lib/offers";
 
 export type GuestCartLine = {
   id: string;
@@ -10,6 +11,7 @@ export type GuestCartLine = {
   image: string;
   size?: ProductSizeId;
   comboChoices?: ComboChoice[];
+  offerBundle?: OfferBundleMeta;
 };
 
 const CART_KEY = "palm_guest_cart";
@@ -41,13 +43,55 @@ function asComboChoices(value: unknown): ComboChoice[] | undefined {
   return out.length ? out : undefined;
 }
 
+function asOfferBundle(value: unknown): OfferBundleMeta | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const r = value as Record<string, unknown>;
+  const offerId = String(r.offerId || "").trim();
+  const offerCode = String(r.offerCode || "").trim();
+  const offerType = String(r.offerType || "").trim();
+  const paidItemId = String(r.paidItemId || "").trim();
+  const paidItemName = String(r.paidItemName || "").trim();
+  if (!offerId || !offerCode || !paidItemId) return undefined;
+  if (offerType !== "bogo" && offerType !== "fixed_price") return undefined;
+  const size = asSize(r.size);
+  const freeItemId = String(r.freeItemId || "").trim();
+  const freeItemName = String(r.freeItemName || "").trim();
+  return {
+    offerId,
+    offerCode,
+    offerType,
+    paidItemId,
+    paidItemName: paidItemName || paidItemId,
+    ...(freeItemId
+      ? {
+          freeItemId,
+          freeItemName: freeItemName || freeItemId,
+        }
+      : {}),
+    ...(size ? { size } : {}),
+  };
+}
+
+function offerBundleKey(bundle?: OfferBundleMeta) {
+  if (!bundle) return "";
+  return [
+    bundle.offerId,
+    bundle.paidItemId,
+    bundle.freeItemId || "",
+    bundle.size || "",
+  ].join(":");
+}
+
 function lineKey(
-  line: Pick<GuestCartLine, "id" | "size" | "comboChoices">,
+  line: Pick<GuestCartLine, "id" | "size" | "comboChoices" | "offerBundle">,
 ) {
+  const offerPart = line.offerBundle
+    ? `::o:${offerBundleKey(line.offerBundle)}`
+    : "";
   const sizePart = line.size ? `::${line.size}` : "";
   const comboPart = comboChoicesKey(line.comboChoices);
   const comboSuffix = comboPart ? `::c:${comboPart}` : "";
-  return `${line.id}${sizePart}${comboSuffix}`;
+  return `${line.id}${offerPart}${sizePart}${comboSuffix}`;
 }
 
 type RawCartLine = Partial<GuestCartLine> & {
@@ -63,6 +107,7 @@ export function normalizeCartLine(raw: RawCartLine | null | undefined): GuestCar
   if (!id || qty <= 0) return null;
   const size = asSize(raw.size);
   const comboChoices = asComboChoices(raw.comboChoices);
+  const offerBundle = asOfferBundle(raw.offerBundle);
   return {
     id,
     name: String(raw.name || "Menu item"),
@@ -71,6 +116,7 @@ export function normalizeCartLine(raw: RawCartLine | null | undefined): GuestCar
     image: String(raw.image || ""),
     ...(size ? { size } : {}),
     ...(comboChoices ? { comboChoices } : {}),
+    ...(offerBundle ? { offerBundle } : {}),
   };
 }
 
@@ -102,6 +148,9 @@ function mergeCartLines(...groups: GuestCartLine[][]): GuestCartLine[] {
           : {}),
         ...(prev.comboChoices || line.comboChoices
           ? { comboChoices: prev.comboChoices || line.comboChoices }
+          : {}),
+        ...(prev.offerBundle || line.offerBundle
+          ? { offerBundle: prev.offerBundle || line.offerBundle }
           : {}),
       });
     }
@@ -169,8 +218,8 @@ export function writeFulfillment(value: Fulfillment) {
 }
 
 function sameChoiceLine(
-  a: Pick<GuestCartLine, "id" | "size" | "comboChoices">,
-  b: Pick<GuestCartLine, "id" | "size" | "comboChoices">,
+  a: Pick<GuestCartLine, "id" | "size" | "comboChoices" | "offerBundle">,
+  b: Pick<GuestCartLine, "id" | "size" | "comboChoices" | "offerBundle">,
 ) {
   return lineKey(a) === lineKey(b);
 }
@@ -245,6 +294,25 @@ export async function addToCart(
   addLocalLine(item, qty, { size, comboChoices });
 }
 
+/** Add a promo offer bundle (BOGO or fixed price) — always stored locally. */
+export function addOfferBundleToCart(line: GuestCartLine) {
+  const normalized = normalizeCartLine(line);
+  if (!normalized?.offerBundle) return;
+  const cart = readGuestCart();
+  const existing = cart.find((c) => sameChoiceLine(c, normalized));
+  if (existing) {
+    existing.qty += normalized.qty;
+    existing.price = normalized.price;
+    existing.name = normalized.name;
+    existing.image = normalized.image || existing.image;
+    existing.offerBundle = normalized.offerBundle;
+    if (normalized.size) existing.size = normalized.size;
+  } else {
+    cart.push(normalized);
+  }
+  writeGuestCart(cart);
+}
+
 async function fetchServerCart(): Promise<GuestCartLine[]> {
   const data = await api<{ items?: unknown[] }>("/cart");
   return normalizeLines(data.items);
@@ -252,7 +320,7 @@ async function fetchServerCart(): Promise<GuestCartLine[]> {
 
 async function pushGuestLinesToServer(lines: GuestCartLine[]) {
   for (const line of lines) {
-    if (line.size || line.comboChoices?.length) continue;
+    if (line.size || line.comboChoices?.length || line.offerBundle) continue;
     try {
       await api("/cart", {
         method: "POST",
@@ -299,6 +367,7 @@ export async function loadShopCart(options?: {
           (g) =>
             !g.size &&
             !g.comboChoices?.length &&
+            !g.offerBundle &&
             !server.some((s) => s.id === g.id),
         );
         const toPush = missing.length ? missing : server.length ? [] : guest;
@@ -316,6 +385,7 @@ export async function loadShopCart(options?: {
           (g) =>
             !g.size &&
             !g.comboChoices?.length &&
+            !g.offerBundle &&
             server.some((s) => s.id === g.id),
         )
       ) {

@@ -39,7 +39,7 @@ function VerifyForm() {
           : "Email verified! Welcome to Palm Pizza Club."),
     );
     window.setTimeout(() => {
-      router.replace(data.user.role === "admin" ? "/admin" : "/account");
+      router.replace(data.user.role === "admin" ? "/admin" : "/");
     }, 900);
   };
 

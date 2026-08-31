@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import ResolvedMenuImage from "@/components/ResolvedMenuImage";
 import { PromoSizePriceRowLight } from "@/components/PromoSizePriceRow";
 import { api } from "@/lib/api";
-import { offerHref, type OfferRecord } from "@/lib/offers";
+import { offerHref, isOrderableOffer, hasOfferPromoPricing, type OfferRecord } from "@/lib/offers";
 
 export default function HomeDealsStrip() {
   const [offers, setOffers] = useState<OfferRecord[]>([]);
@@ -70,7 +70,7 @@ export default function HomeDealsStrip() {
                     {offer.description}
                   </p>
                 ) : null}
-                {offer.sizePrices ? (
+                {hasOfferPromoPricing(offer) ? (
                   <div className="mt-3">
                     <PromoSizePriceRowLight sizes={offer.sizePrices} />
                   </div>
@@ -85,7 +85,7 @@ export default function HomeDealsStrip() {
                   href={offerHref(offer)}
                   className="mt-4 inline-flex rounded-full bg-pam-red px-4 py-2.5 text-center text-sm font-bold text-white"
                 >
-                  Grab this deal →
+                  {isOrderableOffer(offer) ? "Pick & order →" : "Grab deal →"}
                 </Link>
               </div>
             </article>
