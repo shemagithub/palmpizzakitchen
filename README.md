@@ -1,34 +1,85 @@
-# palmpizzakitchen
+# Palm Pizza Kitchen
 
-Palm Pizza Kitchen — Next.js storefront and Express/MySQL backend for ordering pizza in Kigali.
+Online ordering for **Palm Pizza Kitchen** (Kigali) — Next.js storefront + Express/MySQL API.
 
-Dark, appetite-led Next.js frontend for **PAM Pizza Kitchen** — cooking and delivering fast food. UI follows the attached PizzaDeli-style layout (black/red, full-bleed hero, categories, bestsellers, combos & sides, newsletter footer).
+**Live:** [palmpizzakitchen.com](https://palmpizzakitchen.com)  
+**API:** [backend.palmpizzakitchen.com](https://backend.palmpizzakitchen.com)  
+**Repo:** [github.com/shemagithub/palmpizzakitchen](https://github.com/shemagithub/palmpizzakitchen)
 
-## Pages
+## Project folders
 
-| Route | Page |
-|---|---|
-| `/` | Home |
-| `/pizzas` | Pizza menu (+ category filters) |
-| `/sides` | Sides |
-| `/combos` | Combos |
-| `/about` | About Us |
-| `/contact` | Contact |
-| `/cart` | Cart |
-| `/account` | Sign in |
-| `/privacy` `/terms` `/refund` | Legal |
+| Folder | What it is |
+|--------|------------|
+| `src/` | Next.js App Router storefront (pages, components, lib) |
+| `public/` | Static assets (logo, favicons, promos, `.htaccess`) |
+| `backend/` | Express API, MySQL schema, payment & mail services |
+| `assets/` | Design reference images |
+| `.env.example` | Frontend env template (copy to `.env.local`) |
+| `backend/.env.example` | Backend env template (copy to `backend/.env`) |
+
+**Not on GitHub (by design):** `.env`, `node_modules`, `out/`, `*.zip`, uploads.
+
+## Features
+
+- Menu: pizzas, burgers, sides, drinks, combos (with size & combo picks)
+- Cart + checkout (delivery areas / fees, pickup, MoMo / Airtel / card)
+- **Promo offers:** BOGO & fixed price — customers pick products; blank sizes stay hidden; flat or per-size promo price
+- Help me choose (home + menu pages only on mobile FAB)
+- Auth: register, verify email, forgot / reset password
+- Admin: menu, offers, orders (Maps), delivery areas, reviews, mailbox, payouts
 
 ## Stack
 
-- Next.js App Router + TypeScript
-- Tailwind CSS v4
-- Oswald + Nunito fonts
+- **Frontend:** Next.js (App Router) + TypeScript + Tailwind CSS
+- **Backend:** Node.js + Express + MySQL
+- **Payments:** XentriPay
 
-## Run
+## Local run
+
+### 1) Backend
 
 ```bash
+cd backend
+cp .env.example .env   # set DB_*, JWT_SECRET, SMTP, etc.
+npm install
+npm start              # default http://localhost:4000
+```
+
+Health check: `http://localhost:4000/api/health`
+
+### 2) Frontend
+
+```bash
+cp .env.example .env.local
+# NEXT_PUBLIC_API_URL=http://localhost:4000/api
 npm install
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+## Main routes
+
+| Route | Page |
+|-------|------|
+| `/` | Home |
+| `/pizzas` `/burgers` `/sides` `/drinks` `/combos` | Menu |
+| `/product/[id]` | Product detail |
+| `/offers` `/offers/order` | Deals + pick items for promo |
+| `/pick` | Help me choose |
+| `/cart` `/checkout` | Cart & checkout |
+| `/account` | Sign in / profile |
+| `/admin` | Shop manager |
+
+## cPanel deploy
+
+1. Build static frontend with `CPANEL_STATIC=1 npm run build` → upload `out/` contents to `public_html`
+2. Upload `backend/` (without `node_modules` / `.env`) → Setup Node.js App → `app.js` → NPM Install → Restart
+3. Keep production `.env` on the server; see `backend/cpanel-deploy.txt`
+
+## Git
+
+```bash
+git clone https://github.com/shemagithub/palmpizzakitchen.git
+cd palmpizzakitchen
+```
