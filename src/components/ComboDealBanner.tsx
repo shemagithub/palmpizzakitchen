@@ -12,11 +12,25 @@ type Props = {
 };
 
 export default function ComboDealBanner({ compact = false }: Props) {
-  const { settings } = useSiteSettings();
+  const { settings, loading } = useSiteSettings();
   const banner = useMemo(
     () => parseComboBanner(settings.combo_banner),
     [settings.combo_banner],
   );
+
+  if (loading) {
+    return (
+      <div
+        className={`animate-pulse rounded-xl bg-pam-sand ${
+          compact ? "min-h-[150px]" : "min-h-[200px] md:min-h-[240px]"
+        }`}
+        aria-hidden
+      />
+    );
+  }
+
+  if (!banner) return null;
+
   const imageSrc = resolveMediaUrl(banner.image);
   const useNextImage =
     imageSrc.includes("images.unsplash.com") || imageSrc.startsWith("/");

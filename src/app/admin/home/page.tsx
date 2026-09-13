@@ -49,9 +49,9 @@ export default function AdminHomeContentPage() {
     try {
       const data = await api<{ settings: Record<string, string> }>("/settings");
       const s = mergeSiteSettings(data.settings);
-      setBanner(parseComboBanner(s.combo_banner));
+      setBanner(parseComboBanner(s.combo_banner) ?? DEFAULT_COMBO_BANNER);
       setTrust(parseTrustPoints(s.trust_points));
-      setCta(parseOrderCta(s.order_cta));
+      setCta(parseOrderCta(s.order_cta) ?? DEFAULT_ORDER_CTA);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load.");

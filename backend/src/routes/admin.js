@@ -621,6 +621,7 @@ function mapOrderDetail(order, items, extra = {}) {
     status: order.status,
     subtotal: Number(order.subtotal),
     deliveryFee: Number(order.delivery_fee),
+    packagingFee: Number(order.packaging_fee) || 0,
     total: Number(order.total),
     notes: order.notes || "",
     time: order.created_at,
@@ -755,7 +756,7 @@ router.get("/customers/:id", adminRequired, async (req, res) => {
     if (ref.type === "checkout") {
       const orders = await query(
         `SELECT id, customer_name, customer_email, phone, address, payment_method, status,
-                subtotal, delivery_fee, total, notes, created_at, updated_at
+                subtotal, delivery_fee, packaging_fee, total, notes, created_at, updated_at
          FROM orders
          WHERE ${ORDER_IDENTITY_SQL} = ?
          ORDER BY created_at DESC
@@ -840,7 +841,7 @@ router.get("/customers/:id", adminRequired, async (req, res) => {
 
     const orders = await query(
       `SELECT id, customer_name, phone, address, payment_method, status,
-              subtotal, delivery_fee, total, notes, created_at, updated_at
+              subtotal, delivery_fee, packaging_fee, total, notes, created_at, updated_at
        FROM orders
        WHERE user_id = ?
        ORDER BY created_at DESC
@@ -863,6 +864,7 @@ router.get("/customers/:id", adminRequired, async (req, res) => {
         status: order.status,
         subtotal: Number(order.subtotal),
         deliveryFee: Number(order.delivery_fee),
+        packagingFee: Number(order.packaging_fee) || 0,
         total: Number(order.total),
         notes: order.notes || "",
         time: order.created_at,
@@ -882,7 +884,7 @@ router.get("/customers/:id", adminRequired, async (req, res) => {
     const linkedIds = new Set(orderDetails.map((o) => o.id));
     const loose = await query(
       `SELECT id, customer_name, phone, address, payment_method, status,
-              subtotal, delivery_fee, total, notes, created_at, updated_at
+              subtotal, delivery_fee, packaging_fee, total, notes, created_at, updated_at
        FROM orders
        WHERE user_id IS NULL
          AND (
@@ -911,6 +913,7 @@ router.get("/customers/:id", adminRequired, async (req, res) => {
         status: order.status,
         subtotal: Number(order.subtotal),
         deliveryFee: Number(order.delivery_fee),
+        packagingFee: Number(order.packaging_fee) || 0,
         total: Number(order.total),
         notes: order.notes || "",
         time: order.created_at,
@@ -1082,6 +1085,8 @@ router.put("/settings", adminRequired, async (req, res) => {
       "accepting_orders",
       "delivery_fee",
       "delivery_area_fees",
+      "packaging_fee_pickup",
+      "packaging_fee_delivery",
       "min_order",
       "kitchen_note",
       "open_hours",

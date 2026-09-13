@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRightIcon,
   BagIcon,
@@ -13,14 +13,23 @@ import {
 } from "@/components/icons";
 import ResolvedMenuImage from "@/components/ResolvedMenuImage";
 import { useSiteSettings } from "@/components/SiteSettingsProvider";
-import { formatPrice, goToProduct, productPath } from "@/data/menu";
-import { minDeliveryFee, parseDeliveryAreaFees } from "@/lib/deliveryAreas";
-import { api } from "@/lib/api";
-import { orderBlockReason } from "@/lib/orderRules";
 import {
+  formatComboChoicesLabel,
+  formatPrice,
+  goToProduct,
+  productPath,
+  sizeLabel,
+} from "@/data/menu";
+import { minDeliveryFee, parseDeliveryAreaFees } from "@/lib/deliveryAreas";
+import { api, getToken } from "@/lib/api";
+import { orderBlockReason } from "@/lib/orderRules";
+import { packagingFeeFor } from "@/lib/packagingFee";
+import {
+  cartLineKey,
+  isLocalOnlyCartLine,
   loadShopCart,
   readFulfillment,
-  readGuestCart,
+  sameCartLine,
   writeFulfillment,
   writeGuestCart,
   type Fulfillment,
@@ -36,6 +45,8 @@ export default function CartView() {
   const [synced, setSynced] = useState(false);
   const [fulfillment, setFulfillment] = useState<Fulfillment>("delivery");
   const [cartError, setCartError] = useState("");
+  const [pendingKey, setPendingKey] = useState("");
+  const persistFromSelf = useRef(false);
 
   useEffect(() => {
     async function load() {
@@ -48,6 +59,10 @@ export default function CartView() {
     setFulfillment(readFulfillment());
 
     const onCart = () => {
+      if (persistFromSelf.current) {
+        persistFromSelf.current = false;
+        return;
+      }
       void loadShopCart().then((cart) => {
         setItems(cart.items);
         setSynced(cart.synced);
@@ -57,7 +72,7 @@ export default function CartView() {
     return () => window.removeEventListener("palm-cart-updated", onCart);
   }, []);
 
-  const defaultDeliveryFee = Number(settings.delivery_fee) || 1500;
+  const defaultDeliveryFee = Number(settings.delivery_fee) || 0;
   const deliveryFrom = useMemo(
     () =>
       minDeliveryFee(
@@ -70,12 +85,14 @@ export default function CartView() {
     () => items.reduce((sum, item) => sum + item.price * item.qty, 0),
     [items],
   );
-  const total = subtotal;
+  const packagingFee = packagingFeeFor(settings, fulfillment);
+  const total = subtotal + packagingFee;
   const checkoutBlock = orderBlockReason(subtotal, settings);
 
-  const persistGuest = (next: CartLine[]) => {
+  const persistCart = (next: CartLine[]) => {
+    persistFromSelf.current = true;
     setItems(next);
-    if (!synced) writeGuestCart(next);
+    writeGuestCart(next);
   };
 
   const chooseFulfillment = (next: Fulfillment) => {
@@ -83,83 +100,67 @@ export default function CartView() {
     writeFulfillment(next);
   };
 
-  const sameLine = (
-    a: CartLine,
-    b: Pick<CartLine, "id" | "size" | "comboChoices" | "offerBundle">,
+  const applyCartChange = async (
+    target: CartLine,
+    next: CartLine[],
+    serverQty?: number,
   ) => {
-    if (a.id !== b.id || (a.size || "") !== (b.size || "")) return false;
-    const aOffer = a.offerBundle
-      ? `${a.offerBundle.offerId}:${a.offerBundle.paidItemId}:${a.offerBundle.freeItemId || ""}`
-      : "";
-    const bOffer = b.offerBundle
-      ? `${b.offerBundle.offerId}:${b.offerBundle.paidItemId}:${b.offerBundle.freeItemId || ""}`
-      : "";
-    if (aOffer !== bOffer) return false;
-    const aKey = (a.comboChoices || [])
-      .map((c) => `${c.slotId}=${c.itemId}`)
-      .sort()
-      .join("|");
-    const bKey = (b.comboChoices || [])
-      .map((c) => `${c.slotId}=${c.itemId}`)
-      .sort()
-      .join("|");
-    return aKey === bKey;
-  };
-
-  const isLocalOnlyLine = (line: CartLine) =>
-    Boolean(line.size || line.comboChoices?.length || line.offerBundle);
-
-  const persistLocalAware = (next: CartLine[]) => {
+    const key = cartLineKey(target);
+    setPendingKey(key);
     setItems(next);
-    const special = next.filter((i) => isLocalOnlyLine(i));
-    const rest = synced
-      ? readGuestCart().filter((i) => !isLocalOnlyLine(i))
-      : next.filter((i) => !isLocalOnlyLine(i));
-    writeGuestCart([...rest, ...special]);
+    setCartError("");
+    try {
+      const token = getToken();
+      if (synced && token && !isLocalOnlyCartLine(target)) {
+        const remove = serverQty == null || serverQty <= 0;
+        if (remove) {
+          await api(`/cart/${encodeURIComponent(target.id)}`, {
+            method: "DELETE",
+          });
+        } else {
+          await api(`/cart/${encodeURIComponent(target.id)}`, {
+            method: "PATCH",
+            body: JSON.stringify({ quantity: serverQty }),
+          });
+        }
+      } else if (synced && !token) {
+        setSynced(false);
+      }
+      persistCart(next);
+    } catch (err) {
+      // Keep the local change so trash / qty still work if the API session is stale.
+      persistCart(next);
+      if (!getToken()) setSynced(false);
+      const status = (err as { status?: number } | null)?.status;
+      if (status && status !== 401 && status !== 404) {
+        setCartError(
+          err instanceof Error
+            ? err.message
+            : "Saved on this device. Sign in again to sync across devices.",
+        );
+      }
+    } finally {
+      setPendingKey("");
+    }
   };
 
   const updateQty = async (target: CartLine, delta: number) => {
-    const current = items.find((i) => sameLine(i, target));
+    if (pendingKey) return;
+    const current = items.find((item) => sameCartLine(item, target));
     if (!current) return;
     const nextQty = Math.max(0, current.qty + delta);
-
     const next = items
       .map((item) =>
-        sameLine(item, target) ? { ...item, qty: nextQty } : item,
+        sameCartLine(item, target) ? { ...item, qty: nextQty } : item,
       )
       .filter((item) => item.qty > 0);
-
-    if (synced && !isLocalOnlyLine(target)) {
-      setItems(next);
-      try {
-        await api(`/cart/${target.id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ quantity: nextQty }),
-        });
-      } catch (err) {
-        setCartError(
-          err instanceof Error ? err.message : "Could not update your cart.",
-        );
-      }
-    } else {
-      persistLocalAware(next);
-    }
+    await applyCartChange(target, next, nextQty);
   };
 
   const removeItem = async (target: CartLine) => {
-    const next = items.filter((item) => !sameLine(item, target));
-    if (synced && !isLocalOnlyLine(target)) {
-      setItems(next);
-      try {
-        await api(`/cart/${target.id}`, { method: "DELETE" });
-      } catch (err) {
-        setCartError(
-          err instanceof Error ? err.message : "Could not remove that item.",
-        );
-      }
-    } else {
-      persistLocalAware(next);
-    }
+    if (pendingKey) return;
+    const next = items.filter((item) => !sameCartLine(item, target));
+    await applyCartChange(target, next, 0);
   };
 
   if (loading) {
@@ -201,12 +202,16 @@ export default function CartView() {
             to sync your cart across devices.
           </p>
         )}
-        {items.map((item) => (
+        {items.map((item) => {
+          const lineKey = cartLineKey(item);
+          const comboLabel = formatComboChoicesLabel(item.comboChoices);
+          const busy = pendingKey === lineKey;
+          return (
           <article
-            key={`${item.id}-${item.size || "one"}-${(item.comboChoices || [])
-              .map((c) => c.itemId)
-              .join("_") || "plain"}`}
-            className="soft-card flex gap-4 rounded-3xl border border-pam-border/70 bg-white p-4"
+            key={lineKey}
+            className={`soft-card flex gap-4 rounded-3xl border border-pam-border/70 bg-white p-4 ${
+              busy ? "opacity-60" : ""
+            }`}
           >
             <a
               href={productPath(item.id)}
@@ -247,16 +252,31 @@ export default function CartView() {
                           ? " · BOGO"
                           : " · Deal price"}
                       </span>
+                    ) : item.size ? (
+                      sizeLabel(item.size)
+                    ) : comboLabel ? (
+                      comboLabel
                     ) : (
                       "Tap for details"
                     )}
                   </p>
+                  {item.size && (item.offerBundle || comboLabel) ? (
+                    <p className="mt-0.5 text-[11px] text-pam-muted">
+                      {sizeLabel(item.size)}
+                      {comboLabel ? ` · ${comboLabel}` : ""}
+                    </p>
+                  ) : comboLabel && item.offerBundle ? (
+                    <p className="mt-0.5 text-[11px] text-pam-muted">
+                      {comboLabel}
+                    </p>
+                  ) : null}
                 </div>
                 <button
                   type="button"
                   aria-label="Remove"
+                  disabled={Boolean(pendingKey)}
                   onClick={() => void removeItem(item)}
-                  className="text-pam-muted hover:text-pam-red"
+                  className="text-pam-muted hover:text-pam-red disabled:opacity-40"
                 >
                   <TrashIcon className="h-4 w-4" />
                 </button>
@@ -265,8 +285,10 @@ export default function CartView() {
               <div className="mt-3 inline-flex items-center rounded-full border border-pam-border">
                 <button
                   type="button"
+                  disabled={Boolean(pendingKey)}
+                  aria-label="Decrease quantity"
                   onClick={() => void updateQty(item, -1)}
-                  className="px-3 py-1.5"
+                  className="px-3 py-1.5 disabled:opacity-40"
                 >
                   <MinusIcon className="h-3.5 w-3.5" />
                 </button>
@@ -275,15 +297,18 @@ export default function CartView() {
                 </span>
                 <button
                   type="button"
+                  disabled={Boolean(pendingKey)}
+                  aria-label="Increase quantity"
                   onClick={() => void updateQty(item, 1)}
-                  className="px-3 py-1.5"
+                  className="px-3 py-1.5 disabled:opacity-40"
                 >
                   <PlusIcon className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
           </article>
-        ))}
+          );
+        })}
       </div>
 
       <aside className="soft-card h-fit rounded-3xl border border-pam-border/70 bg-white p-5">
@@ -320,13 +345,23 @@ export default function CartView() {
           >
             <HomeIcon className="h-4 w-4 text-pam-red" />
             <p className="mt-1.5 text-sm font-extrabold text-pam-ink">Pickup</p>
-            <p className="mt-0.5 text-[11px] text-pam-muted">No delivery fee</p>
+            <p className="mt-0.5 text-[11px] text-pam-muted">
+              {packagingFeeFor(settings, "pickup") > 0
+                ? `Packaging ${formatPrice(packagingFeeFor(settings, "pickup"))}`
+                : "No delivery fee"}
+            </p>
           </button>
         </div>
         <div className="mt-4 space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-pam-muted">Subtotal</span>
             <span className="font-semibold">{formatPrice(subtotal)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-pam-muted">Packaging</span>
+            <span className="font-semibold">
+              {packagingFee ? formatPrice(packagingFee) : "Free"}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-pam-muted">
@@ -345,7 +380,7 @@ export default function CartView() {
           )}
           <div className="flex justify-between border-t border-pam-border pt-3 text-base">
             <span className="font-bold">
-              {fulfillment === "delivery" ? "Subtotal" : "Total"}
+              {fulfillment === "delivery" ? "Items + packaging" : "Total"}
             </span>
             <span className="font-[family-name:var(--font-oswald)] text-2xl">
               {formatPrice(total)}
@@ -360,8 +395,12 @@ export default function CartView() {
           )}
           <p>
             {fulfillment === "pickup"
-              ? "We’ll have it ready at the shop. No delivery fee."
-              : "Usually arrives in about 30 minutes after checkout."}
+              ? packagingFee
+                ? `We’ll have it ready at the shop. Packaging ${formatPrice(packagingFee)}. No delivery fee.`
+                : "We’ll have it ready at the shop. No delivery fee."
+              : packagingFee
+                ? `Packaging ${formatPrice(packagingFee)} is included. Delivery is added at checkout.`
+                : "Usually arrives in about 30 minutes after checkout."}
           </p>
         </div>
         {cartError && (

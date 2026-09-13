@@ -99,6 +99,10 @@ export async function ensureSchema() {
         "paid_at",
         `ALTER TABLE \`${database}\`.orders ADD COLUMN paid_at DATETIME NULL`,
       ],
+      [
+        "packaging_fee",
+        `ALTER TABLE \`${database}\`.orders ADD COLUMN packaging_fee DECIMAL(12,2) NOT NULL DEFAULT 0`,
+      ],
     ];
     for (const [column, sql] of orderColumns) {
       const [cols] = await connection.query(

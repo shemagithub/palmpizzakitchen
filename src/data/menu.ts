@@ -701,14 +701,10 @@ const GALLERY_POOLS: Record<MenuItem["category"], string[]> = {
   ],
 };
 
-/** Gallery photos from the database/API (main image first). No stock filler. */
+/** Gallery photos from the database/API only (main image first). */
 export function getProductImages(item: MenuItem): string[] {
   const extras = (item.images ?? []).filter(Boolean);
-  const own = Array.from(new Set([item.image, ...extras].filter(Boolean)));
-  if (own.length) return own;
-  // Soft fallback only when an item has no image at all in the DB.
-  const pool = GALLERY_POOLS[item.category] ?? [];
-  return pool.slice(0, 1);
+  return Array.from(new Set([item.image, ...extras].filter(Boolean)));
 }
 
 const DETAILS: Record<string, Partial<ProductDetails>> = {
@@ -855,49 +851,18 @@ function defaultsFor(item: MenuItem): ProductDetails {
 }
 
 export function getProductDetails(item: MenuItem): ProductDetails {
-  const base = defaultsFor(item);
   const fromApi = item.details ?? {};
-  // Prefer admin/API details; only use legacy static DETAILS when API has none.
-  const hasApiDetails = Boolean(
-    fromApi.ingredients?.length ||
-      fromApi.allergens?.length ||
-      fromApi.highlights?.length ||
-      fromApi.prepTime ||
-      fromApi.calories ||
-      fromApi.serves ||
-      fromApi.longDescription,
-  );
-  const extra = hasApiDetails ? {} : DETAILS[item.id] ?? {};
+  const description = String(item.description || "").trim();
   return {
-    ...base,
-    ...extra,
-    ...fromApi,
-    ingredients: fromApi.ingredients?.length
-      ? fromApi.ingredients
-      : (extra.ingredients ?? base.ingredients),
-    allergens: fromApi.allergens
-      ? fromApi.allergens
-      : (extra.allergens ?? base.allergens),
-    highlights: fromApi.highlights?.length
-      ? fromApi.highlights
-      : (extra.highlights ?? base.highlights),
-    prepTime: fromApi.prepTime || extra.prepTime || base.prepTime,
-    calories: fromApi.calories || extra.calories || base.calories,
-    serves: fromApi.serves || extra.serves || base.serves,
-    longDescription:
-      fromApi.longDescription ||
-      extra.longDescription ||
-      base.longDescription,
-    sizes:
-      normalizeSizePrices(fromApi.sizes) ||
-      normalizeSizePrices(extra.sizes) ||
-      normalizeSizePrices(base.sizes),
-    comboSlots:
-      normalizeComboSlots(fromApi.comboSlots) ||
-      normalizeComboSlots(
-        (extra as Partial<ProductDetails>).comboSlots,
-      ) ||
-      normalizeComboSlots(base.comboSlots),
+    ingredients: fromApi.ingredients?.length ? fromApi.ingredients : [],
+    allergens: fromApi.allergens ?? [],
+    highlights: fromApi.highlights?.length ? fromApi.highlights : [],
+    prepTime: fromApi.prepTime || "",
+    calories: fromApi.calories || "",
+    serves: fromApi.serves || "",
+    longDescription: fromApi.longDescription || description,
+    sizes: normalizeSizePrices(fromApi.sizes),
+    comboSlots: normalizeComboSlots(fromApi.comboSlots),
   };
 }
 

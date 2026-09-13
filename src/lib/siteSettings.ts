@@ -30,6 +30,8 @@ export type SiteSettings = {
   delivery_fee: string;
   /** JSON array: [{ area, fee }] per Kigali sector */
   delivery_area_fees: string;
+  packaging_fee_pickup: string;
+  packaging_fee_delivery: string;
   min_order: string;
   kitchen_note: string;
   /** JSON string of HeroSlide[] for homepage carousel */
@@ -61,11 +63,11 @@ export function emptyHeroSlide(): HeroSlide {
 }
 
 export function parseHeroSlides(raw: string | undefined | null): HeroSlide[] {
-  if (!raw?.trim()) return DEFAULT_HERO_SLIDES.map((s) => ({ ...s }));
+  if (!raw?.trim()) return [];
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed) || parsed.length === 0) {
-      return DEFAULT_HERO_SLIDES.map((s) => ({ ...s }));
+      return [];
     }
     return parsed
       .map((item) => {
@@ -96,13 +98,47 @@ export function parseHeroSlides(raw: string | undefined | null): HeroSlide[] {
       })
       .filter((s): s is HeroSlide => Boolean(s));
   } catch {
-    return DEFAULT_HERO_SLIDES.map((s) => ({ ...s }));
+    return [];
   }
 }
 
 export function serializeHeroSlides(slides: HeroSlide[]): string {
   return JSON.stringify(slides);
 }
+
+export const EMPTY_SITE_SETTINGS: SiteSettings = {
+  company_name: "",
+  company_tagline: "",
+  logo_url: "",
+  footer_blurb: "",
+  about_text: "",
+  phone: "",
+  email: "",
+  address: "",
+  open_hours: "",
+  social_instagram: "",
+  social_facebook: "",
+  social_tiktok: "",
+  social_twitter: "",
+  social_whatsapp: "",
+  promo_badge: "",
+  accepting_orders: "",
+  delivery_fee: "",
+  delivery_area_fees: "",
+  packaging_fee_pickup: "",
+  packaging_fee_delivery: "",
+  min_order: "",
+  kitchen_note: "",
+  hero_slides: "",
+  testimonials: "",
+  combo_banner: "",
+  trust_points: "",
+  quick_categories: "",
+  order_cta: "",
+  about_subtitle: "",
+  about_story_title: "",
+  about_story_image: "",
+};
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   company_name: "Palm Pizza Kitchen",
@@ -125,6 +161,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   accepting_orders: "1",
   delivery_fee: "1500",
   delivery_area_fees: "",
+  packaging_fee_pickup: "0",
+  packaging_fee_delivery: "0",
   min_order: "8000",
   kitchen_note: "",
   hero_slides: serializeHeroSlides(DEFAULT_HERO_SLIDES),
@@ -159,6 +197,8 @@ export const WEBSITE_SETTING_KEYS = [
   "accepting_orders",
   "delivery_fee",
   "delivery_area_fees",
+  "packaging_fee_pickup",
+  "packaging_fee_delivery",
   "min_order",
   "kitchen_note",
   "hero_slides",
@@ -175,17 +215,12 @@ export const WEBSITE_SETTING_KEYS = [
 export function mergeSiteSettings(
   raw: Record<string, string> | undefined | null,
 ): SiteSettings {
-  const next = { ...DEFAULT_SITE_SETTINGS };
+  const next = { ...EMPTY_SITE_SETTINGS };
   if (!raw) return next;
   for (const key of WEBSITE_SETTING_KEYS) {
     const value = raw[key];
-    if (value !== undefined && value !== null && String(value).length > 0) {
+    if (value !== undefined && value !== null) {
       next[key] = String(value);
-    } else if (value === "") {
-      // Allow clearing optional social links / kitchen note
-      if (key.startsWith("social_") || key === "kitchen_note") {
-        next[key] = "";
-      }
     }
   }
   return next;

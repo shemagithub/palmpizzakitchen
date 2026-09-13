@@ -9,12 +9,32 @@ import { offerHref, isOrderableOffer, hasOfferPromoPricing, type OfferRecord } f
 
 export default function HomeDealsStrip() {
   const [offers, setOffers] = useState<OfferRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api<{ offers: OfferRecord[] }>("/offers?home=1")
       .then((data) => setOffers(data.offers || []))
-      .catch(() => setOffers([]));
+      .catch(() => setOffers([]))
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) {
+    return (
+      <section className="border-b border-pam-border/60 bg-pam-warm py-8 md:py-10">
+        <div className="mx-auto max-w-[1600px] px-5 md:px-8">
+          <div className="h-8 w-48 animate-pulse rounded bg-pam-sand" />
+          <div className="mt-5 flex gap-4 overflow-hidden">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-56 w-[min(88vw,320px)] shrink-0 animate-pulse rounded-lg bg-pam-sand"
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (!offers.length) return null;
 

@@ -92,6 +92,8 @@ export default function AdminSettingsPage() {
           accepting_orders: form.accepting_orders === "0" ? "0" : "1",
           delivery_fee: form.delivery_fee,
           delivery_area_fees: serializeDeliveryAreaFees(areaFees),
+          packaging_fee_pickup: form.packaging_fee_pickup,
+          packaging_fee_delivery: form.packaging_fee_delivery,
           min_order: form.min_order,
           kitchen_note: form.kitchen_note,
         }),
@@ -326,9 +328,46 @@ export default function AdminSettingsPage() {
 
             <AdminCard className="space-y-4 p-4 sm:p-5">
               <h2 className="font-[family-name:var(--font-oswald)] text-xl">
-                Delivery rules
+                Fees & delivery
               </h2>
+              <p className="text-xs text-pam-muted">
+                Packaging is charged on the cart and checkout for the option
+                the customer picks — pickup or delivery. Set 0 to turn a fee
+                off.
+              </p>
               <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold">
+                    Packaging — pickup (RWF)
+                  </label>
+                  <input
+                    className="input-field rounded-2xl"
+                    inputMode="numeric"
+                    value={form.packaging_fee_pickup}
+                    onChange={(e) =>
+                      setField("packaging_fee_pickup", e.target.value)
+                    }
+                  />
+                  <p className="mt-1 text-[11px] text-pam-muted">
+                    Box / bag charge when they collect at the shop.
+                  </p>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold">
+                    Packaging — delivery (RWF)
+                  </label>
+                  <input
+                    className="input-field rounded-2xl"
+                    inputMode="numeric"
+                    value={form.packaging_fee_delivery}
+                    onChange={(e) =>
+                      setField("packaging_fee_delivery", e.target.value)
+                    }
+                  />
+                  <p className="mt-1 text-[11px] text-pam-muted">
+                    Box / bag charge when the order is delivered.
+                  </p>
+                </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold">
                     Default delivery fee (RWF)

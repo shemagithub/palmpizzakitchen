@@ -13,6 +13,8 @@ export function shopFaqItems(settings: SiteSettings): FaqItem[] {
   const address = settings.address || "Kigali, Rwanda";
   const minOrder = settings.min_order || "0";
   const deliveryFee = settings.delivery_fee || "0";
+  const packPickup = settings.packaging_fee_pickup || "0";
+  const packDelivery = settings.packaging_fee_delivery || "0";
   const whatsapp = settings.social_whatsapp || "";
 
   return [
@@ -36,7 +38,7 @@ export function shopFaqItems(settings: SiteSettings): FaqItem[] {
     },
     {
       question: "Is there a minimum order or delivery fee?",
-      answer: `Delivery is ${deliveryFee} RWF. The minimum order is ${minOrder} RWF. Exact totals are shown in your cart before you pay.`,
+      answer: `Delivery starts from ${deliveryFee} RWF and depends on your area. Pickup has no delivery fee. Packaging is ${packPickup} RWF for pickup and ${packDelivery} RWF for delivery. The minimum order is ${minOrder} RWF. Exact totals are shown in your cart before you pay.`,
     },
     {
       question: "How do I pay?",

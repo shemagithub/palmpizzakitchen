@@ -10,11 +10,26 @@ import { parseQuickCategories } from "@/lib/homeContent";
 
 export default function QuickCategories() {
   const pathname = usePathname();
-  const { settings } = useSiteSettings();
+  const { settings, loading } = useSiteSettings();
   const cats = useMemo(
     () => parseQuickCategories(settings.quick_categories),
     [settings.quick_categories],
   );
+
+  if (loading) {
+    return (
+      <div className="border-b border-pam-border bg-pam-surface py-5 sm:py-8 md:py-10">
+        <div className="mx-auto flex max-w-[1600px] gap-4 overflow-hidden px-3 sm:px-5 md:justify-center md:px-8">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex w-[68px] shrink-0 flex-col items-center gap-2 md:w-[100px]">
+              <div className="h-[68px] w-[68px] animate-pulse rounded-full bg-pam-sand md:h-[92px] md:w-[92px]" />
+              <div className="h-3 w-12 animate-pulse rounded bg-pam-sand" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (!cats.length) return null;
 

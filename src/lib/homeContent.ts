@@ -196,13 +196,10 @@ export function validateTestimonials(
 }
 
 export function parseTestimonials(raw?: string | null): TestimonialItem[] {
-  if (!raw?.trim()) return DEFAULT_TESTIMONIALS.map((t) => ({ ...t }));
+  if (!raw?.trim()) return [];
   try {
     const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) {
-      return DEFAULT_TESTIMONIALS.map((t) => ({ ...t }));
-    }
-    if (parsed.length === 0) return [];
+    if (!Array.isArray(parsed) || parsed.length === 0) return [];
     return parsed
       .map((item) => {
         const row = asObj(item);
@@ -219,36 +216,37 @@ export function parseTestimonials(raw?: string | null): TestimonialItem[] {
       })
       .filter((t): t is TestimonialItem => Boolean(t));
   } catch {
-    return DEFAULT_TESTIMONIALS.map((t) => ({ ...t }));
+    return [];
   }
 }
 
-export function parseComboBanner(raw?: string | null): ComboBannerContent {
-  if (!raw?.trim()) return { ...DEFAULT_COMBO_BANNER };
+export function parseComboBanner(raw?: string | null): ComboBannerContent | null {
+  if (!raw?.trim()) return null;
   try {
     const row = asObj(JSON.parse(raw));
-    if (!row) return { ...DEFAULT_COMBO_BANNER };
+    if (!row) return null;
+    const title = String(row.title ?? "").trim();
+    const image = String(row.image ?? "").trim();
+    if (!title && !image) return null;
     return {
-      eyebrow: String(row.eyebrow ?? DEFAULT_COMBO_BANNER.eyebrow),
-      title: String(row.title ?? DEFAULT_COMBO_BANNER.title),
-      copy: String(row.copy ?? DEFAULT_COMBO_BANNER.copy),
-      cta: String(row.cta ?? DEFAULT_COMBO_BANNER.cta),
-      href: String(row.href ?? DEFAULT_COMBO_BANNER.href),
-      badge: String(row.badge ?? DEFAULT_COMBO_BANNER.badge),
-      image: String(row.image ?? DEFAULT_COMBO_BANNER.image),
+      eyebrow: String(row.eyebrow ?? "").trim(),
+      title,
+      copy: String(row.copy ?? "").trim(),
+      cta: String(row.cta ?? "").trim(),
+      href: String(row.href ?? "").trim() || "/combos",
+      badge: String(row.badge ?? "").trim(),
+      image,
     };
   } catch {
-    return { ...DEFAULT_COMBO_BANNER };
+    return null;
   }
 }
 
 export function parseTrustPoints(raw?: string | null): TrustPointItem[] {
-  if (!raw?.trim()) return DEFAULT_TRUST_POINTS.map((t) => ({ ...t }));
+  if (!raw?.trim()) return [];
   try {
     const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed) || !parsed.length) {
-      return DEFAULT_TRUST_POINTS.map((t) => ({ ...t }));
-    }
+    if (!Array.isArray(parsed) || !parsed.length) return [];
     return parsed
       .map((item) => {
         const row = asObj(item);
@@ -262,18 +260,15 @@ export function parseTrustPoints(raw?: string | null): TrustPointItem[] {
       })
       .filter((t): t is TrustPointItem => Boolean(t));
   } catch {
-    return DEFAULT_TRUST_POINTS.map((t) => ({ ...t }));
+    return [];
   }
 }
 
 export function parseQuickCategories(raw?: string | null): QuickCategoryItem[] {
-  if (!raw?.trim()) return DEFAULT_QUICK_CATEGORIES.map((t) => ({ ...t }));
+  if (!raw?.trim()) return [];
   try {
     const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) {
-      return DEFAULT_QUICK_CATEGORIES.map((t) => ({ ...t }));
-    }
-    // Empty array is intentional (admin deleted every shortcut).
+    if (!Array.isArray(parsed)) return [];
     return parsed
       .map((item) => {
         const row = asObj(item);
@@ -292,7 +287,7 @@ export function parseQuickCategories(raw?: string | null): QuickCategoryItem[] {
       })
       .filter((t): t is QuickCategoryItem => Boolean(t));
   } catch {
-    return DEFAULT_QUICK_CATEGORIES.map((t) => ({ ...t }));
+    return [];
   }
 }
 
@@ -307,25 +302,23 @@ export function serializeQuickCategories(items: QuickCategoryItem[]): string {
   );
 }
 
-export function parseOrderCta(raw?: string | null): OrderCtaContent {
-  if (!raw?.trim()) return { ...DEFAULT_ORDER_CTA };
+export function parseOrderCta(raw?: string | null): OrderCtaContent | null {
+  if (!raw?.trim()) return null;
   try {
     const row = asObj(JSON.parse(raw));
-    if (!row) return { ...DEFAULT_ORDER_CTA };
+    if (!row) return null;
+    const title = String(row.title ?? "").trim();
+    if (!title) return null;
     return {
-      title: String(row.title ?? DEFAULT_ORDER_CTA.title),
-      copy: String(row.copy ?? DEFAULT_ORDER_CTA.copy),
-      primary_label: String(row.primary_label ?? DEFAULT_ORDER_CTA.primary_label),
-      primary_href: String(row.primary_href ?? DEFAULT_ORDER_CTA.primary_href),
-      secondary_label: String(
-        row.secondary_label ?? DEFAULT_ORDER_CTA.secondary_label,
-      ),
-      secondary_href: String(
-        row.secondary_href ?? DEFAULT_ORDER_CTA.secondary_href,
-      ),
-      image: String(row.image ?? DEFAULT_ORDER_CTA.image),
+      title,
+      copy: String(row.copy ?? "").trim(),
+      primary_label: String(row.primary_label ?? "").trim(),
+      primary_href: String(row.primary_href ?? "").trim() || "/pizzas",
+      secondary_label: String(row.secondary_label ?? "").trim(),
+      secondary_href: String(row.secondary_href ?? "").trim() || "/combos",
+      image: String(row.image ?? "").trim(),
     };
   } catch {
-    return { ...DEFAULT_ORDER_CTA };
+    return null;
   }
 }

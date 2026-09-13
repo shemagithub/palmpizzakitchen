@@ -30,6 +30,7 @@ export type OrderDetail = {
   status: string;
   subtotal: number;
   deliveryFee: number;
+  packagingFee?: number;
   total: number;
   notes: string;
   notesMeta: OrderNotesMeta;
@@ -461,8 +462,20 @@ export default function OrderDetailModal({
                     <span>{formatPrice(order.subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-pam-muted">
-                    <span>Delivery fee</span>
-                    <span>{formatPrice(order.deliveryFee)}</span>
+                    <span>Packaging</span>
+                    <span>{formatPrice(order.packagingFee || 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-pam-muted">
+                    <span>
+                      {order.fulfillment === "pickup"
+                        ? "Pickup"
+                        : "Delivery fee"}
+                    </span>
+                    <span>
+                      {order.fulfillment === "pickup"
+                        ? "Free"
+                        : formatPrice(order.deliveryFee)}
+                    </span>
                   </div>
                   <div className="flex justify-between font-[family-name:var(--font-oswald)] text-lg text-pam-ink">
                     <span>Total</span>

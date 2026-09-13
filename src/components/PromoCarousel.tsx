@@ -10,7 +10,7 @@ import { parseHeroSlides } from "@/lib/siteSettings";
 const AUTO_MS = 4500;
 
 export default function PromoCarousel() {
-  const { settings } = useSiteSettings();
+  const { settings, loading } = useSiteSettings();
   const promos = useMemo(
     () => parseHeroSlides(settings.hero_slides),
     [settings.hero_slides],
@@ -106,6 +106,15 @@ export default function PromoCarousel() {
     const next = Math.min(Math.max(0, nearest), promos.length - 1);
     el.scrollTo({ left: next * width, behavior: "smooth" });
   };
+
+  if (loading) {
+    return (
+      <section
+        className="min-h-[240px] animate-pulse bg-pam-sand sm:min-h-[320px] md:min-h-[420px] lg:min-h-[480px]"
+        aria-hidden
+      />
+    );
+  }
 
   if (promos.length === 0) return null;
 

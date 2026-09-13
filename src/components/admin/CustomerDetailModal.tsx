@@ -31,6 +31,7 @@ export type CustomerDetail = {
     status: string;
     subtotal: number;
     deliveryFee: number;
+    packagingFee?: number;
     total: number;
     notes: string;
     time: string;
@@ -528,6 +529,12 @@ export default function CustomerDetailModal({
                                 <div className="flex justify-between">
                                   <span>Subtotal</span>
                                   <span>{formatPrice(order.subtotal)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Packaging</span>
+                                  <span>
+                                    {formatPrice(order.packagingFee || 0)}
+                                  </span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span>Delivery</span>

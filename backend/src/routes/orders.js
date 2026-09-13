@@ -12,6 +12,7 @@ import {
   extractAreaFromOrderInput,
   resolveDeliveryFee,
 } from "../services/deliveryFees.js";
+import { resolvePackagingFee } from "../services/packagingFees.js";
 import {
   loadActiveOffer,
   resolveOfferBundleLine,
@@ -370,6 +371,7 @@ async function serializeCustomerOrder(order) {
     total: Number(order.total),
     subtotal: Number(order.subtotal),
     deliveryFee: Number(order.delivery_fee),
+    packagingFee: Number(order.packaging_fee) || 0,
     status: order.status,
     kitchenLabel: kitchenLabel(order),
     paymentStatus: order.payment_status || "pending",
@@ -431,6 +433,7 @@ async function buildOrderDetail(order) {
     status: order.status,
     subtotal: Number(order.subtotal),
     deliveryFee: Number(order.delivery_fee),
+    packagingFee: Number(order.packaging_fee) || 0,
     total: Number(order.total),
     notes: order.notes || "",
     notesMeta,
@@ -773,7 +776,8 @@ router.post("/", optionalAuth, async (req, res) => {
 
     const deliveryFee =
       fulfillment === "pickup" ? 0 : await resolveDeliveryFee(deliveryArea);
-    const total = Number((subtotal + deliveryFee).toFixed(2));
+    const packagingFee = await resolvePackagingFee(fulfillment);
+    const total = Number((subtotal + deliveryFee + packagingFee).toFixed(2));
     const orderId = nextOrderId();
     const userId = req.user?.id || null;
 
@@ -787,8 +791,8 @@ router.post("/", optionalAuth, async (req, res) => {
 
     await query(
       `INSERT INTO orders
-        (id, user_id, customer_name, customer_email, phone, address, payment_method, status, payment_status, subtotal, delivery_fee, total, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', 'pending', ?, ?, ?, ?)`,
+        (id, user_id, customer_name, customer_email, phone, address, payment_method, status, payment_status, subtotal, delivery_fee, packaging_fee, total, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', 'pending', ?, ?, ?, ?, ?)`,
       [
         orderId,
         userId,
@@ -799,6 +803,7 @@ router.post("/", optionalAuth, async (req, res) => {
         pay,
         subtotal,
         deliveryFee,
+        packagingFee,
         total,
         orderNotes || null,
       ],
@@ -822,6 +827,7 @@ router.post("/", optionalAuth, async (req, res) => {
       total,
       subtotal,
       delivery_fee: deliveryFee,
+      packaging_fee: packagingFee,
       user_id: userId,
     };
 

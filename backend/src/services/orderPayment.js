@@ -194,6 +194,7 @@ async function sendPaidEmails(bundle, tx) {
     items: bundle.items,
     subtotal: Number(bundle.order.subtotal),
     deliveryFee: Number(bundle.order.delivery_fee),
+    packagingFee: Number(bundle.order.packaging_fee) || 0,
     total: Number(bundle.order.total),
     paymentMethod: bundle.order.payment_method,
     paymentMethodLabel: paymentMethodLabel(bundle.order.payment_method),
@@ -280,6 +281,7 @@ Items:
 ${itemText}
 
 Subtotal: ${Math.round(bundle.order.subtotal).toLocaleString("en-RW")} RWF
+Packaging: ${Math.round(Number(bundle.order.packaging_fee) || 0).toLocaleString("en-RW")} RWF
 Delivery: ${Math.round(bundle.order.delivery_fee).toLocaleString("en-RW")} RWF
 Total: ${Math.round(bundle.order.total).toLocaleString("en-RW")} RWF
 Payment: ${paymentMethodLabel(bundle.order.payment_method)} (${tx.customer_reference})
@@ -309,7 +311,7 @@ PDF receipt is attached.`,
                 </tr>
                 ${itemRows}
               </table>
-              <p style="margin-top:16px;">Subtotal ${Math.round(bundle.order.subtotal).toLocaleString("en-RW")} RWF · Delivery ${Math.round(bundle.order.delivery_fee).toLocaleString("en-RW")} RWF</p>
+              <p style="margin-top:16px;">Subtotal ${Math.round(bundle.order.subtotal).toLocaleString("en-RW")} RWF · Packaging ${Math.round(Number(bundle.order.packaging_fee) || 0).toLocaleString("en-RW")} RWF · Delivery ${Math.round(bundle.order.delivery_fee).toLocaleString("en-RW")} RWF</p>
               <p style="font-size:20px;font-weight:800;">${Math.round(bundle.order.total).toLocaleString("en-RW")} RWF</p>
               <p>Paid via ${escapeHtml(paymentMethodLabel(bundle.order.payment_method))} · Ref ${escapeHtml(tx.customer_reference)}</p>
               <p style="color:#6b635b;font-size:13px;">Receipt PDF is attached for the kitchen copy.</p>

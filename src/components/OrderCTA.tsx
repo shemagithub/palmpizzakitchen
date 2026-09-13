@@ -8,8 +8,19 @@ import { resolveMediaUrl } from "@/lib/api";
 import { parseOrderCta } from "@/lib/homeContent";
 
 export default function OrderCTA() {
-  const { settings } = useSiteSettings();
+  const { settings, loading } = useSiteSettings();
   const cta = useMemo(() => parseOrderCta(settings.order_cta), [settings.order_cta]);
+
+  if (loading) {
+    return (
+      <section className="border-t border-pam-border bg-pam-sand">
+        <div className="mx-auto h-[240px] max-w-[1100px] animate-pulse bg-pam-warm md:h-[320px]" />
+      </section>
+    );
+  }
+
+  if (!cta) return null;
+
   const imageSrc = resolveMediaUrl(cta.image);
   const useNext =
     imageSrc.includes("images.unsplash.com") || imageSrc.startsWith("/");

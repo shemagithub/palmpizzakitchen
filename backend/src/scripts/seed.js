@@ -552,6 +552,8 @@ async function seed() {
   const settings = [
     ["accepting_orders", "1"],
     ["delivery_fee", "1500"],
+    ["packaging_fee_pickup", "0"],
+    ["packaging_fee_delivery", "0"],
     ["min_order", "8000"],
     ["kitchen_note", "Extra cheese prep ready for weekend rush."],
     ["open_hours", "11:00 AM – 11:00 PM"],

@@ -23,8 +23,8 @@ export default function Newsletter() {
   };
 
   return (
-    <section className="border-t border-pam-border bg-pam-sand px-4 py-10 md:px-8 md:py-12">
-      <div className="mx-auto flex max-w-[1100px] flex-col gap-6 md:flex-row md:items-end md:justify-between">
+    <section className="border-t border-pam-border bg-pam-sand px-5 py-10 md:px-8 md:py-12">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="max-w-md">
           <h2 className="font-[family-name:var(--font-oswald)] text-2xl text-pam-ink md:text-3xl">
             Deals & new menu items

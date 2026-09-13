@@ -7,11 +7,29 @@ import { parseTestimonials } from "@/lib/homeContent";
 import { useMemo } from "react";
 
 export default function Testimonials() {
-  const { settings } = useSiteSettings();
+  const { settings, loading } = useSiteSettings();
   const reviews = useMemo(
     () => parseTestimonials(settings.testimonials),
     [settings.testimonials],
   );
+
+  if (loading) {
+    return (
+      <section className="border-y border-pam-border bg-pam-sand/35 py-12 sm:py-16">
+        <div className="mx-auto max-w-[1100px] px-3 sm:px-5 md:px-8">
+          <div className="h-8 w-56 animate-pulse rounded bg-pam-sand" />
+          <div className="mt-8 flex gap-4 overflow-hidden">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-40 w-[min(82vw,300px)] shrink-0 animate-pulse rounded-2xl bg-pam-sand"
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (!reviews.length) return null;
 

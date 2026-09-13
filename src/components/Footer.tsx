@@ -61,7 +61,7 @@ export default function Footer() {
       <Newsletter />
 
       <div className="border-t border-pam-border bg-pam-ink text-white">
-        <div className="mx-auto max-w-[1100px] px-5 pt-10 pb-8 md:px-8 md:pt-12 md:pb-10">
+        <div className="mx-auto w-full max-w-[1600px] px-5 pt-10 pb-8 md:px-8 md:pt-12 md:pb-10">
           <div className="mb-10 grid gap-3 sm:grid-cols-3">
             {[
               {
@@ -74,12 +74,16 @@ export default function Footer() {
                 title: "Delivery in Kigali",
                 copy: "Usually about 30 minutes",
               },
-              {
-                Icon: ClockIcon,
-                title: "Hours",
-                copy: settings.open_hours,
-              },
-            ].map(({ Icon, title, copy }) => (
+              settings.open_hours
+                ? {
+                    Icon: ClockIcon,
+                    title: "Hours",
+                    copy: settings.open_hours,
+                  }
+                : null,
+            ]
+              .filter((row): row is NonNullable<typeof row> => Boolean(row))
+              .map(({ Icon, title, copy }) => (
               <div
                 key={title}
                 className="flex items-center gap-3 rounded-lg border border-white/15 px-4 py-3"
@@ -100,9 +104,11 @@ export default function Footer() {
           <div className="grid gap-10 lg:grid-cols-[1.4fr_0.7fr_0.7fr_0.7fr] lg:gap-12">
             <div>
               <BrandLogo size="lg" />
-              <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/55">
-                {settings.footer_blurb}
-              </p>
+              {settings.footer_blurb ? (
+                <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/55">
+                  {settings.footer_blurb}
+                </p>
+              ) : null}
 
               <div className="mt-6 flex flex-wrap gap-2">
                 {settings.promo_badge && (

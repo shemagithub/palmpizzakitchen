@@ -24,6 +24,7 @@ import {
   type DeliveryAreaFee,
 } from "@/lib/deliveryAreas";
 import { orderBlockReason } from "@/lib/orderRules";
+import { packagingFeeFor } from "@/lib/packagingFee";
 import { promoLineBadge } from "@/lib/offers";
 
 type CartLine = GuestCartLine;
@@ -158,7 +159,8 @@ export default function CheckoutClient() {
   );
   const delivery =
     items.length && fulfillment === "delivery" && area ? deliveryFee : 0;
-  const total = subtotal + delivery;
+  const packaging = items.length ? packagingFeeFor(settings, fulfillment) : 0;
+  const total = subtotal + delivery + packaging;
   const checkoutBlock = orderBlockReason(subtotal, settings);
   const canCheckout = !checkoutBlock && payReady;
 
@@ -572,6 +574,12 @@ export default function CheckoutClient() {
             <span className="font-semibold">{formatPrice(subtotal)}</span>
           </div>
           <div className="flex justify-between">
+            <span className="text-pam-muted">Packaging</span>
+            <span className="font-semibold">
+              {packaging ? formatPrice(packaging) : "Free"}
+            </span>
+          </div>
+          <div className="flex justify-between">
             <span className="text-pam-muted">
               {fulfillment === "pickup" ? "Pickup" : "Delivery"}
             </span>
@@ -677,7 +685,9 @@ export default function CheckoutClient() {
                 </h2>
                 <p className="mt-1 text-sm text-pam-muted">
                   {fulfillment === "pickup"
-                    ? "We’ll have your order ready at the shop. No delivery fee."
+                    ? packaging
+                      ? `We’ll have your order ready at the shop. Packaging ${formatPrice(packaging)}. No delivery fee.`
+                      : "We’ll have your order ready at the shop. No delivery fee."
                     : "Tell us your location in Kigali - then choose how to pay."}
                 </p>
 
@@ -710,7 +720,11 @@ export default function CheckoutClient() {
                   >
                     <HomeIcon className="h-4 w-4 text-pam-red" />
                     <p className="mt-1 text-sm font-extrabold">Pickup</p>
-                    <p className="text-[11px] text-pam-muted">No delivery fee</p>
+                    <p className="text-[11px] text-pam-muted">
+                      {packagingFeeFor(settings, "pickup")
+                        ? `Packaging ${formatPrice(packagingFeeFor(settings, "pickup"))}`
+                        : "No delivery fee"}
+                    </p>
                   </button>
                 </div>
 

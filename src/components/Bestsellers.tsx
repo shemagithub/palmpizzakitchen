@@ -9,6 +9,8 @@ export default function Bestsellers() {
   const { pizzas, loading } = useMenu();
   const items = pizzas.slice(0, 6);
 
+  if (!loading && !items.length) return null;
+
   return (
     <section className="border-y border-pam-border bg-pam-sand py-10 sm:py-14 md:py-20">
       <div className="mx-auto max-w-[1600px] px-3 sm:px-5 md:px-8">

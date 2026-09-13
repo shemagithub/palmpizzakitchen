@@ -74,7 +74,7 @@ export default function ProductPageClient({ id: propId }: { id: string }) {
           setItem({
             ...data.item,
             price: Number(data.item.price) || 0,
-            rating: Number(data.item.rating) || 4.8,
+            rating: Number(data.item.rating) || 0,
             reviews: Number(data.item.reviews) || 0,
             images: Array.isArray(data.item.images)
               ? data.item.images.filter(Boolean)

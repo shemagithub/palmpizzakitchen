@@ -12,11 +12,33 @@ export default function Categories() {
 
   const cats = useMemo(() => {
     return CATEGORIES.map((cat) => {
-      const live = pizzas.find((p) => p.category === cat.slug);
-      const image = live?.image || cat.image;
-      return { ...cat, image: resolveMediaUrl(image) };
-    });
+      const live = pizzas.find((p) => p.category === cat.slug && p.image);
+      if (!live) return null;
+      return { ...cat, image: resolveMediaUrl(live.image) };
+    }).filter((cat): cat is (typeof CATEGORIES)[number] & { image: string } =>
+      Boolean(cat),
+    );
   }, [pizzas]);
+
+  if (loading && !pizzas.length) {
+    return (
+      <section className="border-y border-pam-border bg-pam-warm py-10 sm:py-14">
+        <div className="mx-auto max-w-[1100px] px-3 sm:px-5 md:px-8">
+          <div className="mb-6 h-8 w-48 animate-pulse rounded bg-pam-sand" />
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="aspect-square animate-pulse rounded-lg bg-pam-sand"
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!cats.length) return null;
 
   return (
     <section className="border-y border-pam-border bg-pam-warm py-10 sm:py-14">
@@ -45,9 +67,7 @@ export default function Categories() {
                 className="group overflow-hidden rounded-lg border border-pam-border bg-white transition hover:border-pam-red/40"
               >
                 <div className="relative aspect-square bg-pam-sand">
-                  {loading && !pizzas.length ? (
-                    <div className="absolute inset-0 animate-pulse bg-pam-sand" />
-                  ) : nextOk ? (
+                  {nextOk ? (
                     <Image
                       src={src}
                       alt={cat.title}

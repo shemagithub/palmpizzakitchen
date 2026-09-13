@@ -73,9 +73,17 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## cPanel deploy
 
-1. Build static frontend with `CPANEL_STATIC=1 npm run build` → upload `out/` contents to `public_html`
-2. Upload `backend/` (without `node_modules` / `.env`) → Setup Node.js App → `app.js` → NPM Install → Restart
-3. Keep production `.env` on the server; see `backend/cpanel-deploy.txt`
+Create a ready-to-upload zip (website + API, no `node_modules` / `.env`):
+
+```bash
+./scripts/pack-cpanel.sh
+```
+
+That writes `palmpizzakitchen-cpanel-YYYYMMDD.zip`. Then:
+
+1. Extract `public_html/` into the site `public_html` (keep `.htaccess`)
+2. Extract `palm-backend/` → Setup Node.js App → `app.js` → NPM Install → Restart
+3. Keep the live `.env` on the server; see `backend/cpanel-deploy.txt`
 
 ## Git
 

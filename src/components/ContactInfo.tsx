@@ -3,7 +3,17 @@
 import { useSiteSettings } from "@/components/SiteSettingsProvider";
 
 export default function ContactInfo() {
-  const { settings } = useSiteSettings();
+  const { settings, loading } = useSiteSettings();
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        <div className="h-7 w-40 animate-pulse rounded bg-pam-sand" />
+        <div className="h-4 w-56 animate-pulse rounded bg-pam-sand" />
+        <div className="h-4 w-48 animate-pulse rounded bg-pam-sand" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -11,16 +21,22 @@ export default function ContactInfo() {
         <h2 className="font-[family-name:var(--font-oswald)] text-2xl tracking-[0.04em] text-pam-ink">
           Kitchen info
         </h2>
-        <p className="mt-3 text-pam-muted">{settings.phone}</p>
-        <p className="text-pam-muted">{settings.email}</p>
-        <p className="text-pam-muted">{settings.address}</p>
+        {settings.phone ? (
+          <p className="mt-3 text-pam-muted">{settings.phone}</p>
+        ) : null}
+        {settings.email ? <p className="text-pam-muted">{settings.email}</p> : null}
+        {settings.address ? (
+          <p className="text-pam-muted">{settings.address}</p>
+        ) : null}
       </div>
+      {settings.open_hours ? (
       <div>
         <h3 className="font-[family-name:var(--font-oswald)] text-xl tracking-[0.04em] text-pam-red">
           Hours
         </h3>
-        <p className="mt-2 text-pam-muted">Mon – Sun: {settings.open_hours}</p>
+        <p className="mt-2 text-pam-muted">{settings.open_hours}</p>
       </div>
+      ) : null}
       {(settings.social_instagram ||
         settings.social_whatsapp) && (
         <div>

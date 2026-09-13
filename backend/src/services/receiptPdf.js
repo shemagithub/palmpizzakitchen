@@ -184,9 +184,9 @@ export async function buildOrderReceiptPdf(data) {
   y -= 10;
   page.drawRectangle({
     x: 300,
-    y: y - 58,
+    y: y - 76,
     width: 267,
-    height: 72,
+    height: 90,
     color: white,
   });
   page.drawText("Subtotal", { x: 316, y: y - 8, size: 9, font, color: muted });
@@ -197,24 +197,32 @@ export async function buildOrderReceiptPdf(data) {
     font,
     color: ink,
   });
-  page.drawText("Delivery", { x: 316, y: y - 26, size: 9, font, color: muted });
+  page.drawText("Packaging", { x: 316, y: y - 24, size: 9, font, color: muted });
+  page.drawText(formatRwf(data.packagingFee), {
+    x: 430,
+    y: y - 24,
+    size: 9,
+    font,
+    color: ink,
+  });
+  page.drawText("Delivery", { x: 316, y: y - 40, size: 9, font, color: muted });
   page.drawText(formatRwf(data.deliveryFee), {
     x: 430,
-    y: y - 26,
+    y: y - 40,
     size: 9,
     font,
     color: ink,
   });
   page.drawText("Total paid", {
     x: 316,
-    y: y - 48,
+    y: y - 64,
     size: 12,
     font: fontBold,
     color: ink,
   });
   page.drawText(formatRwf(data.total), {
     x: 430,
-    y: y - 48,
+    y: y - 64,
     size: 12,
     font: fontBold,
     color: red,

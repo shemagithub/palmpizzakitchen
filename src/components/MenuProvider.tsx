@@ -58,7 +58,7 @@ function normalize(raw: MenuItem[]): MenuItem[] {
     }
     return {
       ...item,
-      rating: Number(item.rating) || 4.8,
+      rating: Number(item.rating) || 0,
       reviews: Number(item.reviews) || 0,
       price: Number(item.price) || 0,
       images: Array.isArray(item.images)

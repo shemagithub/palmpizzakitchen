@@ -142,34 +142,46 @@ export default function ProductDetailPanel({ item, details }: Props) {
         {item.name}
       </h1>
 
-      <p className="mt-2 text-sm text-pam-muted sm:mt-3">
-        {item.rating.toFixed(1)} rating · {item.reviews} reviews
-      </p>
+      {item.rating > 0 || item.reviews > 0 ? (
+        <p className="mt-2 text-sm text-pam-muted sm:mt-3">
+          {item.rating.toFixed(1)} rating · {item.reviews} reviews
+        </p>
+      ) : null}
 
-      <p className="mt-4 text-sm leading-relaxed text-pam-ink/75 sm:mt-5 sm:text-base md:text-lg">
-        {details.longDescription}
-      </p>
+      {details.longDescription ? (
+        <p className="mt-4 text-sm leading-relaxed text-pam-ink/75 sm:mt-5 sm:text-base md:text-lg">
+          {details.longDescription}
+        </p>
+      ) : null}
 
+      {details.prepTime || details.serves || details.calories ? (
       <dl className="mt-6 grid grid-cols-3 gap-2 border-y border-pam-border py-4 text-xs sm:mt-8 sm:gap-4 sm:py-5 sm:text-sm">
+        {details.prepTime ? (
         <div className="min-w-0">
           <dt className="text-pam-muted">Ready in</dt>
           <dd className="mt-1 font-semibold break-words text-pam-ink">
             {details.prepTime}
           </dd>
         </div>
+        ) : null}
+        {details.serves ? (
         <div className="min-w-0">
           <dt className="text-pam-muted">Serves</dt>
           <dd className="mt-1 font-semibold break-words text-pam-ink">
             {details.serves}
           </dd>
         </div>
+        ) : null}
+        {details.calories ? (
         <div className="min-w-0">
           <dt className="text-pam-muted">Energy</dt>
           <dd className="mt-1 font-semibold break-words text-pam-ink">
             {details.calories}
           </dd>
         </div>
+        ) : null}
       </dl>
+      ) : null}
 
       {needsCombo && (
         <div className="mt-6 space-y-5 sm:mt-8">
@@ -387,7 +399,11 @@ export default function ProductDetailPanel({ item, details }: Props) {
         </Link>
       </div>
 
+      {details.ingredients.length ||
+      details.allergens.length ||
+      details.highlights.length ? (
       <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-6 sm:mt-10 sm:gap-x-8 sm:gap-y-8">
+        {details.ingredients.length ? (
         <div className="min-w-0">
           <h2 className="font-[family-name:var(--font-oswald)] text-lg tracking-[0.04em] text-pam-ink sm:text-xl">
             Ingredients
@@ -398,6 +414,8 @@ export default function ProductDetailPanel({ item, details }: Props) {
             ))}
           </ul>
         </div>
+        ) : null}
+        {details.allergens.length ? (
         <div className="min-w-0">
           <h2 className="font-[family-name:var(--font-oswald)] text-lg tracking-[0.04em] text-pam-ink sm:text-xl">
             Allergens
@@ -408,6 +426,8 @@ export default function ProductDetailPanel({ item, details }: Props) {
             ))}
           </ul>
         </div>
+        ) : null}
+        {details.highlights.length ? (
         <div className="min-w-0">
           <h2 className="font-[family-name:var(--font-oswald)] text-lg tracking-[0.04em] text-pam-ink sm:text-xl">
             Highlights
@@ -418,7 +438,9 @@ export default function ProductDetailPanel({ item, details }: Props) {
             ))}
           </ul>
         </div>
+        ) : null}
       </div>
+      ) : null}
 
       <div className="fixed inset-x-0 bottom-[calc(4.85rem+env(safe-area-inset-bottom))] z-40 border-t border-pam-border/80 bg-white/95 px-3 py-2.5 backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-lg items-center gap-3">

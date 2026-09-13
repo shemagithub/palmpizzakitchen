@@ -7,11 +7,32 @@ import ComboDealBanner from "@/components/ComboDealBanner";
 import { useMenu } from "@/components/MenuProvider";
 
 export default function CombosSides() {
-  const { combos, sides } = useMenu();
+  const { combos, sides, loading } = useMenu();
+
+  if (loading && !combos.length && !sides.length) {
+    return (
+      <section className="bg-pam-warm py-10 sm:py-14 md:py-20">
+        <div className="mx-auto max-w-[1600px] space-y-10 px-3 sm:px-5 md:px-8">
+          <div className="h-8 w-32 animate-pulse rounded bg-pam-sand" />
+          <div className="flex gap-3 overflow-hidden">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-[320px] w-[min(78vw,280px)] shrink-0 animate-pulse rounded-3xl bg-pam-sand"
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!combos.length && !sides.length) return <ComboDealBanner />;
 
   return (
     <section className="bg-pam-warm py-10 sm:py-14 md:py-20">
       <div className="mx-auto max-w-[1600px] space-y-10 px-3 sm:space-y-14 sm:px-5 md:px-8">
+        {combos.length > 0 ? (
         <div>
           <div className="mb-4 flex items-end justify-between gap-3 sm:mb-6">
             <h2 className="font-[family-name:var(--font-oswald)] text-2xl tracking-[0.04em] text-pam-ink md:text-3xl">
@@ -41,9 +62,11 @@ export default function CombosSides() {
             ))}
           </SwipeCarousel>
         </div>
+        ) : null}
 
         <ComboDealBanner />
 
+        {sides.length > 0 ? (
         <div>
           <div className="mb-4 flex items-end justify-between gap-3 sm:mb-6">
             <h2 className="font-[family-name:var(--font-oswald)] text-2xl tracking-[0.04em] text-pam-ink md:text-3xl">
@@ -73,6 +96,7 @@ export default function CombosSides() {
             ))}
           </SwipeCarousel>
         </div>
+        ) : null}
       </div>
     </section>
   );

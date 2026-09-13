@@ -13,11 +13,29 @@ import { parseTrustPoints } from "@/lib/homeContent";
 const ICONS = [ScooterIcon, LeafIcon, SparkIcon, ShieldIcon] as const;
 
 export default function Features() {
-  const { settings } = useSiteSettings();
+  const { settings, loading } = useSiteSettings();
   const points = useMemo(
     () => parseTrustPoints(settings.trust_points),
     [settings.trust_points],
   );
+
+  if (loading) {
+    return (
+      <section className="border-b border-pam-border bg-pam-surface">
+        <div className="mx-auto grid max-w-[1600px] grid-cols-2 gap-4 px-3 py-8 sm:grid-cols-4 sm:px-5 md:px-8">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex flex-col items-center gap-2">
+              <div className="h-10 w-10 animate-pulse rounded-lg bg-pam-sand sm:h-12 sm:w-12" />
+              <div className="h-4 w-24 animate-pulse rounded bg-pam-sand" />
+              <div className="h-3 w-16 animate-pulse rounded bg-pam-sand" />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (!points.length) return null;
 
   return (
     <section className="border-b border-pam-border bg-pam-surface">

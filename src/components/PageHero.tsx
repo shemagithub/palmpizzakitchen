@@ -9,12 +9,14 @@ type Props = {
 
 export default function PageHero({ title, subtitle }: Props) {
   const { settings } = useSiteSettings();
-  const eyebrow = settings.company_name || "Palm Pizza Kitchen";
+  const eyebrow = settings.company_name.trim();
 
   return (
     <section className="border-b border-pam-border bg-pam-sand">
       <div className="mx-auto max-w-[1600px] px-5 py-12 md:px-8 md:py-16">
-        <p className="mb-2 text-sm font-bold text-pam-red">{eyebrow}</p>
+        {eyebrow ? (
+          <p className="mb-2 text-sm font-bold text-pam-red">{eyebrow}</p>
+        ) : null}
         <h1 className="font-[family-name:var(--font-oswald)] text-4xl text-pam-ink md:text-5xl">
           {title}
         </h1>

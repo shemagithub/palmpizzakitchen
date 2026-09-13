@@ -94,6 +94,30 @@ function lineKey(
   return `${line.id}${offerPart}${sizePart}${comboSuffix}`;
 }
 
+export function cartLineKey(
+  line: Pick<GuestCartLine, "id" | "size" | "comboChoices" | "offerBundle">,
+) {
+  return lineKey(line);
+}
+
+export function sameCartLine(
+  a: Pick<GuestCartLine, "id" | "size" | "comboChoices" | "offerBundle">,
+  b: Pick<GuestCartLine, "id" | "size" | "comboChoices" | "offerBundle">,
+) {
+  return lineKey(a) === lineKey(b);
+}
+
+export function isLocalOnlyCartLine(
+  line: Pick<GuestCartLine, "size" | "comboChoices" | "offerBundle">,
+) {
+  return Boolean(line.size || line.comboChoices?.length || line.offerBundle);
+}
+
+function hasGuestCartStore() {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(CART_KEY) !== null;
+}
+
 type RawCartLine = Partial<GuestCartLine> & {
   itemId?: string;
   quantity?: number;
@@ -200,7 +224,10 @@ export function readCartSnapshot(): GuestCartLine[] {
 export function writeCartSnapshot(items: GuestCartLine[]) {
   if (typeof window === "undefined") return;
   const next = normalizeLines(items);
-  if (!next.length) return;
+  if (!next.length) {
+    sessionStorage.removeItem(SNAPSHOT_KEY);
+    return;
+  }
   sessionStorage.setItem(SNAPSHOT_KEY, JSON.stringify(next));
 }
 
@@ -355,7 +382,9 @@ export async function loadShopCart(options?: {
     const snapshot = readCartSnapshot();
 
     if (!getToken()) {
-      const items = mergeCartLines(guest, snapshot);
+      // An existing guest store is the source of truth — even when it is [].
+      // Otherwise a stale checkout snapshot can put deleted items back.
+      const items = hasGuestCartStore() ? guest : mergeCartLines(guest, snapshot);
       writeCartSnapshot(items);
       return { items, synced: false };
     }
@@ -365,10 +394,7 @@ export async function loadShopCart(options?: {
       if (syncGuest) {
         const missing = guest.filter(
           (g) =>
-            !g.size &&
-            !g.comboChoices?.length &&
-            !g.offerBundle &&
-            !server.some((s) => s.id === g.id),
+            !isLocalOnlyCartLine(g) && !server.some((s) => s.id === g.id),
         );
         const toPush = missing.length ? missing : server.length ? [] : guest;
         if (toPush.length) {
@@ -377,24 +403,32 @@ export async function loadShopCart(options?: {
         }
       }
 
-      const items = mergeCartLines(server, guest, snapshot);
+      const unsyncedPlains = guest.filter(
+        (g) => !isLocalOnlyCartLine(g) && !server.some((s) => s.id === g.id),
+      );
+      const items = mergeCartLines(
+        server,
+        unsyncedPlains,
+        guest.filter(isLocalOnlyCartLine),
+        snapshot.filter(isLocalOnlyCartLine),
+      );
       if (
         syncGuest &&
         server.length &&
         guest.every(
           (g) =>
-            !g.size &&
-            !g.comboChoices?.length &&
-            !g.offerBundle &&
-            server.some((s) => s.id === g.id),
-        )
+            isLocalOnlyCartLine(g) || server.some((s) => s.id === g.id),
+        ) &&
+        !guest.some(isLocalOnlyCartLine)
       ) {
         localStorage.removeItem(CART_KEY);
       }
       writeCartSnapshot(items);
       return { items, synced: server.length > 0 };
     } catch {
-      const items = mergeCartLines(guest, snapshot);
+      const items = hasGuestCartStore()
+        ? mergeCartLines(guest, snapshot.filter(isLocalOnlyCartLine))
+        : mergeCartLines(guest, snapshot);
       writeCartSnapshot(items);
       return { items, synced: false };
     }

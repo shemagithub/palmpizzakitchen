@@ -11,7 +11,7 @@ import {
 } from "react";
 import { api } from "@/lib/api";
 import {
-  DEFAULT_SITE_SETTINGS,
+  EMPTY_SITE_SETTINGS,
   mergeSiteSettings,
   type SiteSettings,
 } from "@/lib/siteSettings";
@@ -23,7 +23,7 @@ type Ctx = {
 };
 
 const SiteSettingsContext = createContext<Ctx>({
-  settings: DEFAULT_SITE_SETTINGS,
+  settings: EMPTY_SITE_SETTINGS,
   loading: true,
   refresh: async () => {},
 });
@@ -37,7 +37,7 @@ export default function SiteSettingsProvider({
 }: {
   children: ReactNode;
 }) {
-  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
+  const [settings, setSettings] = useState<SiteSettings>(EMPTY_SITE_SETTINGS);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -45,7 +45,7 @@ export default function SiteSettingsProvider({
       const data = await api<{ settings: Record<string, string> }>("/settings");
       setSettings(mergeSiteSettings(data.settings));
     } catch {
-      /* keep defaults offline */
+      setSettings(EMPTY_SITE_SETTINGS);
     } finally {
       setLoading(false);
     }
