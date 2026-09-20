@@ -173,8 +173,7 @@ export default function AdminDashboardPage() {
 
       {error && (
         <AdminAlert>
-          {error}. Please sign in again from the Account page using your admin
-          email and password.
+          {error}. Please sign in again with your admin email and password.
         </AdminAlert>
       )}
 

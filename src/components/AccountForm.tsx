@@ -19,6 +19,11 @@ import {
   userInitials,
 } from "@/hooks/useAuthUser";
 import { api, clearSession, setSession } from "@/lib/api";
+import {
+  loginWithCredentials,
+  normalizeEmail,
+  normalizePassword,
+} from "@/lib/authCredentials";
 
 type Mode = "login" | "signup";
 
@@ -128,12 +133,17 @@ export default function AccountForm({
     setError("");
     setSuccess("");
 
-    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedEmail = normalizeEmail(email);
+    const trimmedPassword = normalizePassword(password);
     if (!trimmedEmail || !trimmedEmail.includes("@")) {
       setError("Enter a valid email address.");
       return;
     }
-    if (password.length < 8) {
+    if (!trimmedPassword) {
+      setError("Enter your password.");
+      return;
+    }
+    if (isSignup && trimmedPassword.length < 8) {
       setError("Password must be at least 8 characters.");
       return;
     }
@@ -143,7 +153,7 @@ export default function AccountForm({
         setError("Please enter your name.");
         return;
       }
-      if (password !== confirm) {
+      if (normalizePassword(confirm) !== trimmedPassword) {
         setError("Passwords do not match.");
         return;
       }
@@ -164,7 +174,7 @@ export default function AccountForm({
             name: name.trim(),
             email: trimmedEmail,
             phone: phone.trim(),
-            password,
+            password: trimmedPassword,
           }),
         });
 
@@ -192,15 +202,7 @@ export default function AccountForm({
         return;
       }
 
-      const data = await api<{
-        token: string;
-        user: { id: number; name: string; email: string; role: string };
-      }>("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email: trimmedEmail, password }),
-      });
-
-      setSession(data.token, data.user);
+      const data = await loginWithCredentials(email, password);
       setSuccess(`Signed in as ${data.user.email}.`);
 
       if (data.user.role === "admin") {
@@ -326,6 +328,23 @@ export default function AccountForm({
               </Link>
             )}
 
+            {user.role !== "admin" && (
+              <Link
+                href="/admin"
+                className="flex items-center justify-between rounded-2xl border border-pam-border bg-white px-4 py-3.5 transition hover:bg-pam-sand/70"
+              >
+                <span>
+                  <span className="block text-sm font-bold text-pam-ink">
+                    Shop manager sign in
+                  </span>
+                  <span className="text-xs text-pam-muted">
+                    This account is a customer. Open admin login to switch.
+                  </span>
+                </span>
+                <span className="text-sm font-bold text-pam-red">Open →</span>
+              </Link>
+            )}
+
             <div className="rounded-2xl border border-pam-border bg-pam-sand/40 p-4">
               <p className="text-sm font-bold text-pam-ink">Change password</p>
               <p className="mt-1 text-xs text-pam-muted">
@@ -350,15 +369,23 @@ export default function AccountForm({
               )}
               <div className="mt-3 space-y-2">
                 <input
-                  className="input-field rounded-xl text-sm"
+                  className="input-field rounded-xl"
                   type="password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoComplete="current-password"
                   placeholder="Current password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                 />
                 <input
-                  className="input-field rounded-xl text-sm"
+                  className="input-field rounded-xl"
                   type="password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoComplete="new-password"
                   placeholder="New password (8+ characters)"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -377,8 +404,8 @@ export default function AccountForm({
                           {
                             method: "POST",
                             body: JSON.stringify({
-                              currentPassword,
-                              newPassword,
+                              currentPassword: normalizePassword(currentPassword),
+                              newPassword: normalizePassword(newPassword),
                             }),
                           },
                         );
@@ -538,6 +565,11 @@ export default function AccountForm({
                 id="account-email"
                 className="input-field input-with-icon rounded-2xl"
                 type="email"
+                inputMode="email"
+                autoComplete={isSignup ? "email" : "username"}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@email.com"
@@ -556,10 +588,15 @@ export default function AccountForm({
                 id="account-password"
                 className="input-field input-with-icon input-with-icon-end rounded-2xl"
                 type={showPassword ? "text" : "password"}
+                autoComplete={isSignup ? "new-password" : "current-password"}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint={isSignup ? "next" : "go"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={8}
+                minLength={isSignup ? 8 : undefined}
               />
               <button
                 type="button"
@@ -586,6 +623,10 @@ export default function AccountForm({
                   id="account-confirm"
                   className="input-field input-with-icon input-with-icon-end rounded-2xl"
                   type={showConfirm ? "text" : "password"}
+                  autoComplete="new-password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   required
@@ -677,6 +718,23 @@ export default function AccountForm({
             <span>
               <span className="block text-sm font-bold">View your cart</span>
               <span className="text-xs text-pam-muted">Continue checkout</span>
+            </span>
+          </span>
+          <span className="text-sm font-bold text-pam-red">Open →</span>
+        </Link>
+        <Link
+          href="/admin"
+          className="soft-card flex items-center justify-between rounded-[1.75rem] border border-pam-border/80 p-4"
+        >
+          <span className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-pam-ink text-white">
+              <ShieldIcon className="h-5 w-5" />
+            </span>
+            <span>
+              <span className="block text-sm font-bold">Shop manager</span>
+              <span className="text-xs text-pam-muted">
+                Sign in on this phone with the admin account
+              </span>
             </span>
           </span>
           <span className="text-sm font-bold text-pam-red">Open →</span>

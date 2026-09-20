@@ -101,7 +101,18 @@ export async function api<T = unknown>(
       (typeof data.error === "string" && data.error) ||
       (typeof data.message === "string" && data.message) ||
       `Request failed (${res.status})`;
-    if (res.status === 401 && typeof window !== "undefined") {
+    const isCredentialPost =
+      path === "/auth/login" ||
+      path === "/auth/register" ||
+      path === "/auth/change-password" ||
+      path === "/auth/verify" ||
+      path === "/auth/reset-password";
+    if (
+      res.status === 401 &&
+      typeof window !== "undefined" &&
+      token &&
+      !isCredentialPost
+    ) {
       clearSession();
     }
     const err = new Error(message) as Error & {

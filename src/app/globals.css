@@ -125,6 +125,7 @@ body {
   border: 1px solid var(--pam-border);
   background: #fff;
   color: var(--pam-ink);
+  font-size: 16px;
   padding-block: 0.85rem;
   padding-left: 1rem;
   padding-right: 1rem;

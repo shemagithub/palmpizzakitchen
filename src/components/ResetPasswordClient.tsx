@@ -5,6 +5,7 @@ import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LockIcon, ShieldIcon } from "@/components/icons";
 import { api, setSession } from "@/lib/api";
+import { normalizeEmail, normalizePassword } from "@/lib/authCredentials";
 
 function EyeIcon({ open, className = "" }: { open: boolean; className?: string }) {
   if (open) {
@@ -60,7 +61,8 @@ function ResetPasswordForm() {
     e.preventDefault();
     setError("");
     setSuccess("");
-    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedEmail = normalizeEmail(email);
+    const trimmedPassword = normalizePassword(password);
     if (!trimmedEmail || !trimmedEmail.includes("@")) {
       setError("Enter the email on your account.");
       return;
@@ -69,11 +71,11 @@ function ResetPasswordForm() {
       setError("Enter the 6-digit code from your reset email.");
       return;
     }
-    if (password.length < 8) {
+    if (trimmedPassword.length < 8) {
       setError("Password must be at least 8 characters.");
       return;
     }
-    if (password !== confirm) {
+    if (normalizePassword(confirm) !== trimmedPassword) {
       setError("Passwords do not match.");
       return;
     }
@@ -90,7 +92,7 @@ function ResetPasswordForm() {
           email: trimmedEmail,
           code: code.trim() || undefined,
           token: tokenParam || undefined,
-          password,
+          password: trimmedPassword,
         }),
       });
       if (data.token && data.user) {
@@ -176,6 +178,11 @@ function ResetPasswordForm() {
             id="reset-email"
             className="input-field rounded-2xl"
             type="email"
+            inputMode="email"
+            autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -218,6 +225,10 @@ function ResetPasswordForm() {
               id="reset-password"
               className="input-field input-with-icon input-with-icon-end rounded-2xl"
               type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               minLength={8}
@@ -247,6 +258,10 @@ function ResetPasswordForm() {
               id="reset-confirm"
               className="input-field input-with-icon rounded-2xl"
               type="password"
+              autoComplete="new-password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               required

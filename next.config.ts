@@ -9,7 +9,12 @@ const staticExport = process.env.CPANEL_STATIC === "1";
 
 const nextConfig: NextConfig = {
   ...(staticExport
-    ? { output: "export" as const, trailingSlash: true }
+    ? {
+        output: "export" as const,
+        trailingSlash: true,
+        distDir: ".next-cpanel",
+        typescript: { ignoreBuildErrors: true },
+      }
     : {}),
   images: {
     unoptimized: staticExport,

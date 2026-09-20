@@ -23,9 +23,10 @@ import {
   UserIcon,
   ReceiptIcon,
 } from "@/components/icons";
+import AdminLoginForm from "@/components/AdminLoginForm";
 import { useSiteSettings } from "@/components/SiteSettingsProvider";
 import { useAuthUser } from "@/hooks/useAuthUser";
-import { api, clearSession } from "@/lib/api";
+import { clearSession } from "@/lib/api";
 
 type NavItem = {
   label: string;
@@ -183,23 +184,11 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!ready) return;
-    if (!isLoggedIn || user?.role !== "admin") {
-      setGuard("denied");
+    if (isLoggedIn && user?.role === "admin") {
+      setGuard("ok");
       return;
     }
-    void (async () => {
-      try {
-        const data = await api<{ user: { role?: string } }>("/auth/me");
-        if (data.user?.role !== "admin") {
-          setGuard("denied");
-          return;
-        }
-        setGuard("ok");
-      } catch {
-        clearSession();
-        setGuard("denied");
-      }
-    })();
+    setGuard("denied");
   }, [ready, isLoggedIn, user?.role]);
 
   const isActive = (href: string) =>
@@ -207,7 +196,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
   const logout = () => {
     clearSession();
-    router.push("/account");
+    router.push("/admin");
   };
 
   if (!ready || guard === "loading") {
@@ -220,24 +209,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
   if (guard === "denied") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f3ebe3] px-4">
-        <div className="soft-card max-w-md rounded-3xl border border-pam-border bg-white p-6 text-center">
-          <ShieldIcon className="mx-auto h-10 w-10 text-pam-red" />
-          <h1 className="mt-3 font-[family-name:var(--font-oswald)] text-2xl text-pam-ink">
-            Admin access only
-          </h1>
-          <p className="mt-2 text-sm text-pam-muted">
-            Sign in with your shop manager account to open orders, menu, and
-            settings.
-          </p>
-          <button
-            type="button"
-            onClick={() => router.push("/account")}
-            className="mt-5 rounded-2xl bg-pam-red px-5 py-3 text-sm font-bold text-white"
-          >
-            Go to sign in
-          </button>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#f3ebe3] px-4 py-8">
+        <AdminLoginForm />
       </div>
     );
   }

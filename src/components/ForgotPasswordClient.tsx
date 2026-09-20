@@ -5,6 +5,7 @@ import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { LockIcon, MailIcon } from "@/components/icons";
 import { api } from "@/lib/api";
+import { normalizeEmail } from "@/lib/authCredentials";
 
 function ForgotPasswordForm() {
   const search = useSearchParams();
@@ -22,7 +23,7 @@ function ForgotPasswordForm() {
     e.preventDefault();
     setError("");
     setSuccess("");
-    const trimmed = email.trim().toLowerCase();
+    const trimmed = normalizeEmail(email);
     if (!trimmed || !trimmed.includes("@")) {
       setError("Enter the email address on your account.");
       return;
@@ -115,6 +116,11 @@ function ForgotPasswordForm() {
               id="forgot-email"
               className="input-field input-with-icon rounded-2xl"
               type="email"
+              inputMode="email"
+              autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@email.com"

@@ -26,7 +26,39 @@ function expiryMinutes(minutes = 30) {
 }
 
 function normalizeEmail(email) {
-  return String(email || "").trim().toLowerCase();
+  return String(email || "")
+    .replace(/[\u200B-\u200D\uFEFF\u2060]/g, "")
+    .replace(/[\u00A0\u202F\u2007]/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
+
+function normalizePassword(password) {
+  return String(password || "")
+    .replace(/[\u200B-\u200D\uFEFF\u2060]/g, "")
+    .replace(/[\u00A0\u202F\u2007]/g, " ")
+    .trim();
+}
+
+async function findUserByLoginEmail(email) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+
+  const candidates = [normalized];
+  if (!normalized.includes("@")) {
+    candidates.push(`${normalized}@palmpizza.com`, `${normalized}@palmpizzakitchen.com`);
+  }
+
+  const placeholders = candidates.map(() => "?").join(", ");
+  const rows = await query(
+    `SELECT id, name, email, password_hash, role, phone, email_verified
+     FROM users
+     WHERE LOWER(TRIM(email)) IN (${placeholders})
+     LIMIT 1`,
+    candidates,
+  );
+  return rows[0] || null;
 }
 
 function publicUser(row) {
@@ -88,7 +120,13 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
+    const registerPassword = normalizePassword(password);
+    if (!normalizedEmail.includes("@") || registerPassword.length < 8) {
+      return res.status(400).json({
+        error: "Name, valid email, and password (8+ chars) are required.",
+      });
+    }
     let phoneValue = null;
     if (phone?.trim()) {
       const local = normalizeRwandaPhone(phone);
@@ -122,7 +160,7 @@ router.post("/register", async (req, res) => {
       return res.status(409).json({ error: "Email is already registered." });
     }
 
-    const hash = await bcrypt.hash(password, 10);
+    const hash = await bcrypt.hash(registerPassword, 10);
     const result = await query(
       `INSERT INTO users (name, email, password_hash, role, phone, email_verified)
        VALUES (?, ?, ?, 'customer', ?, 0)`,
@@ -177,22 +215,22 @@ router.post("/register", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body || {};
-    if (!email?.trim() || !password) {
+    const email = normalizeEmail(req.body?.email);
+    const passwordRaw = String(req.body?.password || "");
+    const password = normalizePassword(passwordRaw);
+    if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required." });
     }
 
-    const rows = await query(
-      `SELECT id, name, email, password_hash, role, phone, email_verified
-       FROM users WHERE email = ?`,
-      [email.trim().toLowerCase()],
-    );
-    if (!rows.length) {
+    const row = await findUserByLoginEmail(email);
+    if (!row) {
       return res.status(401).json({ error: "Invalid email or password." });
     }
 
-    const row = rows[0];
-    const ok = await bcrypt.compare(password, row.password_hash);
+    const ok =
+      (await bcrypt.compare(password, row.password_hash)) ||
+      (passwordRaw !== password &&
+        (await bcrypt.compare(passwordRaw, row.password_hash)));
     if (!ok) {
       return res.status(401).json({ error: "Invalid email or password." });
     }
@@ -386,7 +424,7 @@ router.post("/reset-password", async (req, res) => {
     const email = normalizeEmail(req.body?.email);
     const code = String(req.body?.code || "").trim();
     const token = String(req.body?.token || "").trim();
-    const password = String(req.body?.password || "");
+    const password = normalizePassword(req.body?.password);
 
     if (!email) {
       return res.status(400).json({ error: "Email is required." });
@@ -462,8 +500,8 @@ router.post("/reset-password", async (req, res) => {
 
 router.post("/change-password", authRequired, async (req, res) => {
   try {
-    const currentPassword = String(req.body?.currentPassword || "");
-    const newPassword = String(req.body?.newPassword || "");
+    const currentPassword = normalizePassword(req.body?.currentPassword);
+    const newPassword = normalizePassword(req.body?.newPassword);
     if (!currentPassword || newPassword.length < 8) {
       return res.status(400).json({
         error: "Enter your current password and a new one (8+ characters).",
@@ -480,7 +518,7 @@ router.post("/change-password", authRequired, async (req, res) => {
 
     const ok = await bcrypt.compare(currentPassword, rows[0].password_hash);
     if (!ok) {
-      return res.status(401).json({ error: "Current password is incorrect." });
+      return res.status(400).json({ error: "Current password is incorrect." });
     }
 
     const hash = await bcrypt.hash(newPassword, 10);

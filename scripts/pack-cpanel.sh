@@ -24,12 +24,16 @@ if [[ -d "$ROOT/src/app/api" ]]; then
 fi
 
 echo "→ Building website (CPANEL_STATIC=1)"
+# Separate dist folder so a running `next start` is not wiped.
+# Next 16 writes the static export into distDir (not out/) for this setup.
+rm -rf "$ROOT/.next-cpanel"
 CPANEL_STATIC=1 \
   NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://backend.palmpizzakitchen.com/api}" \
   npm run build
 
-if [[ ! -d "$ROOT/out" ]]; then
-  echo "Build did not produce out/" >&2
+EXPORT_DIR="$ROOT/.next-cpanel"
+if [[ ! -f "$EXPORT_DIR/index.html" ]]; then
+  echo "Build did not produce a static site in .next-cpanel/" >&2
   exit 1
 fi
 
@@ -37,7 +41,7 @@ rm -rf "$DIST"
 mkdir -p "$DIST/public_html" "$DIST/palm-backend"
 
 echo "→ Copying website into public_html/"
-rsync -a --delete "$ROOT/out/" "$DIST/public_html/"
+rsync -a --delete "$EXPORT_DIR/" "$DIST/public_html/"
 if [[ -f "$ROOT/public/.htaccess" ]]; then
   cp "$ROOT/public/.htaccess" "$DIST/public_html/.htaccess"
 fi

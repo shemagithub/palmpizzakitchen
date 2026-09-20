@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   api,
-  clearSession,
   getStoredUser,
   getToken,
   resolveMediaUrl,
@@ -59,10 +58,15 @@ export function useAuthUser() {
       };
       setUser(nextUser);
       localStorage.setItem("palm_user", JSON.stringify(nextUser));
-    } catch {
-      clearSession();
-      setUser(null);
-      setToken(null);
+    } catch (err) {
+      const status =
+        err && typeof err === "object" && "status" in err
+          ? Number((err as { status?: number }).status)
+          : 0;
+      if (status === 401 || !getToken()) {
+        setUser(null);
+        setToken(null);
+      }
     } finally {
       setReady(true);
     }
