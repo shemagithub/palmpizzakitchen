@@ -8,6 +8,7 @@ import ProductGallery from "@/components/ProductGallery";
 import RelatedProducts from "@/components/RelatedProducts";
 import { useMenu } from "@/components/MenuProvider";
 import {
+  categoryPage,
   getProductDetails,
   getProductImages,
   normalizeComboSlots,
@@ -152,26 +153,9 @@ export default function ProductPageClient({ id: propId }: { id: string }) {
   const details = getProductDetails(item);
   const images = getProductImages(item);
   const relatedItems = related(item);
-  const parentHref =
-    item.category === "side"
-      ? "/sides"
-      : item.category === "combo"
-        ? "/combos"
-        : item.category === "drink"
-          ? "/drinks"
-          : item.category === "burger"
-            ? "/burgers"
-            : "/pizzas";
-  const parentLabel =
-    item.category === "side"
-      ? "Sides"
-      : item.category === "combo"
-        ? "Combos"
-        : item.category === "drink"
-          ? "Drinks"
-          : item.category === "burger"
-            ? "Burgers"
-            : "Pizzas";
+  const parent = categoryPage(item.category);
+  const parentHref = parent.path;
+  const parentLabel = parent.label;
 
   return (
     <div className="overflow-x-clip bg-pam-warm">

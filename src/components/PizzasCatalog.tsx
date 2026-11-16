@@ -25,7 +25,7 @@ function PizzaGrid() {
 
   if (loading && !items.length) {
     return (
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
@@ -44,7 +44,7 @@ function PizzaGrid() {
           {items.length ? ` · ${items.length} found` : ""}
         </p>
       )}
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
         {items.map((item) => (
           <ProductCard key={item.id} item={item} />
         ))}
@@ -63,7 +63,7 @@ function PizzaGrid() {
 export default function PizzasCatalog() {
   return (
     <section className="bg-pam-warm py-10 md:py-14">
-      <div className="mx-auto max-w-[1600px] px-5 md:px-8">
+      <div className="mx-auto max-w-[1600px] px-3 sm:px-5 md:px-8">
         <Suspense
           fallback={<div className="mb-8 h-10 border-b border-pam-border" />}
         >
@@ -71,7 +71,7 @@ export default function PizzasCatalog() {
         </Suspense>
         <Suspense
           fallback={
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={i}

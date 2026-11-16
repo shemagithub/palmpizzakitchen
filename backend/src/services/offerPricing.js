@@ -66,7 +66,14 @@ export function categoryEligible(category, eligibleCategories) {
   if (!eligibleCategories.length) {
     return PIZZA_CATEGORIES.has(cat) || cat === "burger";
   }
-  return eligibleCategories.includes(cat);
+  if (eligibleCategories.includes(cat)) return true;
+  if (
+    (cat === "fruit" && eligibleCategories.includes("dessert")) ||
+    (cat === "dessert" && eligibleCategories.includes("fruit"))
+  ) {
+    return true;
+  }
+  return false;
 }
 
 function sizesFromDetails(details) {

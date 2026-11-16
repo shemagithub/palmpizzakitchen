@@ -8,9 +8,9 @@ export default function SidesCatalog() {
 
   return (
     <section className="bg-pam-warm py-10 md:py-14">
-      <div className="mx-auto max-w-[1600px] px-5 md:px-8">
+      <div className="mx-auto max-w-[1600px] px-3 sm:px-5 md:px-8">
         {loading && !sides.length ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
@@ -19,7 +19,7 @@ export default function SidesCatalog() {
             ))}
           </div>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
             {sides.map((item) => (
               <ProductCard key={item.id} item={item} />
             ))}

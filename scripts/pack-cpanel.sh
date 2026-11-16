@@ -7,6 +7,8 @@ cd "$ROOT"
 STAMP="$(date +%Y%m%d)"
 DIST="$ROOT/dist-cpanel"
 ZIP_NAME="palmpizzakitchen-cpanel-${STAMP}.zip"
+FRONT_ZIP="palmpizzakitchen-frontend-cpanel-${STAMP}.zip"
+BACK_ZIP="palmpizzakitchen-backend-cpanel-${STAMP}.zip"
 API_BACKUP=""
 
 cleanup() {
@@ -88,9 +90,72 @@ Keep the live server .env. After extract, do not replace it.
 Details: palm-backend/cpanel-deploy.txt
 EOF
 
-cd "$DIST"
-rm -f "$ROOT/$ZIP_NAME"
-zip -qry "$ROOT/$ZIP_NAME" public_html palm-backend CPANEL-UPLOAD.txt
+cat > "$DIST/FRONTEND-UPLOAD.txt" <<'EOF'
+Palm Pizza Kitchen — FRONTEND (website)
+========================================
 
-echo "→ Created $ZIP_NAME"
-ls -lh "$ROOT/$ZIP_NAME"
+Upload this zip into the website public_html.
+
+1. cPanel → File Manager → public_html
+2. Upload palmpizzakitchen-frontend-cpanel-YYYYMMDD.zip
+3. Extract it
+4. Move everything inside the public_html folder in the zip
+   into the site public_html (overwrite old files)
+5. Confirm these files are directly inside public_html:
+   - index.html
+   - .htaccess
+   - fruit/  bar/  drinks/  pizzas/  admin/
+6. Open https://palmpizzakitchen.com
+
+This website calls the API at:
+https://backend.palmpizzakitchen.com/api
+
+Do not put the API folder inside public_html.
+The API is the other zip: palmpizzakitchen-backend-cpanel-YYYYMMDD.zip
+EOF
+
+cat > "$DIST/BACKEND-UPLOAD.txt" <<'EOF'
+Palm Pizza Kitchen — BACKEND (API)
+===================================
+
+Upload this zip next to the website, not inside public_html.
+
+1. cPanel → File Manager → home folder
+   Example: /home/USER/palm-backend
+2. Upload palmpizzakitchen-backend-cpanel-YYYYMMDD.zip
+3. Extract it so the folder contains app.js, package.json, src/, sql/
+4. Keep the .env that is already on the server.
+   If this is a new server, copy .env.example to .env and fill it in.
+   See cpanel-deploy.txt inside the folder.
+5. cPanel → Setup Node.js App
+   - Node.js 20 or 22
+   - Application mode: Production
+   - Application root: palm-backend
+   - Application startup file: app.js
+   - Application URL: backend.palmpizzakitchen.com
+6. Click Run NPM Install
+7. Click Restart
+8. Open https://backend.palmpizzakitchen.com/api/health
+   You should see: {"ok":true,...,"db":"up"}
+
+Do not replace the live .env when you extract a new zip.
+If package.json changed, run NPM Install again, then Restart.
+EOF
+
+cd "$DIST"
+rm -f "$ROOT/$ZIP_NAME" "$ROOT/$FRONT_ZIP" "$ROOT/$BACK_ZIP"
+zip -qry "$ROOT/$ZIP_NAME" public_html palm-backend CPANEL-UPLOAD.txt
+(
+  cd "$DIST"
+  zip -qry "$ROOT/$FRONT_ZIP" public_html FRONTEND-UPLOAD.txt
+)
+(
+  cd "$DIST/palm-backend"
+  zip -qry "$ROOT/$BACK_ZIP" . -x '*.DS_Store'
+  # Attach the short steps beside the app files.
+  cd "$DIST"
+  zip -qj "$ROOT/$BACK_ZIP" BACKEND-UPLOAD.txt
+)
+
+echo "→ Created"
+ls -lh "$ROOT/$ZIP_NAME" "$ROOT/$FRONT_ZIP" "$ROOT/$BACK_ZIP"

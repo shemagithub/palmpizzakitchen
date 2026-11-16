@@ -422,13 +422,18 @@ export default function CartView() {
             Checkout unavailable
           </button>
         ) : (
-          <Link
-            href="/checkout"
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-pam-red py-3.5 text-sm font-bold text-white"
-          >
-            Checkout
-            <ArrowRightIcon className="h-4 w-4" />
-          </Link>
+          <>
+            <Link
+              href="/checkout"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-pam-red py-3.5 text-sm font-bold text-white"
+            >
+              Checkout
+              <ArrowRightIcon className="h-4 w-4" />
+            </Link>
+            <p className="mt-2 text-center text-[11px] leading-relaxed text-pam-muted">
+              Checkout will ask if you want fruit parts, wine, or a drink.
+            </p>
+          </>
         )}
       </aside>
     </div>

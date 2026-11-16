@@ -18,6 +18,40 @@ export const PRODUCT_SIZE_OPTIONS: {
   { id: "l", label: "Large" },
 ];
 
+export type AlcoholKind =
+  | "wine"
+  | "champagne"
+  | "beer"
+  | "cocktail"
+  | "spirit"
+  | "other";
+
+export const ALCOHOL_KINDS: {
+  id: AlcoholKind;
+  label: string;
+  hint: string;
+}[] = [
+  { id: "wine", label: "Wine", hint: "Red, white, and rosé" },
+  { id: "champagne", label: "Champagne", hint: "Sparkling wine" },
+  { id: "beer", label: "Beer", hint: "Bottles and cans" },
+  { id: "cocktail", label: "Cocktail", hint: "Mixed drinks" },
+  { id: "spirit", label: "Spirits", hint: "Whisky, gin, rum, and similar" },
+  { id: "other", label: "Other alcohol", hint: "Anything else for guests 18+" },
+];
+
+export function normalizeAlcoholKind(raw: unknown): AlcoholKind | undefined {
+  const value = String(raw || "")
+    .trim()
+    .toLowerCase();
+  return ALCOHOL_KINDS.some((kind) => kind.id === value)
+    ? (value as AlcoholKind)
+    : undefined;
+}
+
+export function alcoholKindLabel(kind?: string | null) {
+  return ALCOHOL_KINDS.find((row) => row.id === kind)?.label || "Other alcohol";
+}
+
 /** One pick inside a combo (e.g. "Choose your pizza", "Choose a drink"). */
 export type ComboSlot = {
   id: string;
@@ -45,6 +79,8 @@ export type ProductDetails = {
   sizes?: ProductSizePrices;
   /** When set on a combo, customer must pick one product per slot before add-to-cart */
   comboSlots?: ComboSlot[];
+  /** Wine, champagne, beer, and the rest of the bar list */
+  alcoholKind?: AlcoholKind;
 };
 
 export const PIZZA_CATEGORY_SLUGS: MenuItem["category"][] = [
@@ -62,6 +98,8 @@ export const COMBO_SLOT_PRESETS: {
   { id: "pizza", label: "Choose your pizza", categories: [...PIZZA_CATEGORY_SLUGS] },
   { id: "drink", label: "Choose your drink", categories: ["drink"] },
   { id: "side", label: "Choose a side", categories: ["side"] },
+  { id: "fruit", label: "Choose fruit parts", categories: ["fruit"] },
+  { id: "alcohol", label: "Choose wine or alcohol", categories: ["alcohol"] },
   { id: "burger", label: "Choose a burger", categories: ["burger"] },
 ];
 
@@ -75,7 +113,17 @@ export type MenuItem = {
   rating: number;
   reviews: number;
   badge?: string;
-  category: "classic" | "cheese" | "veggie" | "meat" | "side" | "combo" | "drink" | "burger";
+  category:
+    | "classic"
+    | "cheese"
+    | "veggie"
+    | "meat"
+    | "side"
+    | "combo"
+    | "drink"
+    | "burger"
+    | "fruit"
+    | "alcohol";
   /** Editable product-page fields from admin / API */
   details?: Partial<ProductDetails>;
 };
@@ -236,7 +284,7 @@ export const COMBOS: MenuItem[] = [
   {
     id: "party-pack",
     name: "Party Pack",
-    description: "3 large pizzas, wings, breadsticks, and dessert.",
+    description: "3 large pizzas, wings, breadsticks, and fruit.",
     price: 63000,
     image:
       "https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=400&q=70",
@@ -456,6 +504,147 @@ export const BURGERS: MenuItem[] = [
   },
 ];
 
+export const FRUIT: MenuItem[] = [
+  {
+    id: "fresh-fruit-cup",
+    name: "Fresh Fruit Cup",
+    description: "Seasonal fruit cut into a chilled cup.",
+    price: 4500,
+    image:
+      "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=400&q=70",
+    rating: 4.8,
+    reviews: 42,
+    badge: "FRESH",
+    category: "fruit",
+  },
+  {
+    id: "watermelon-slices",
+    name: "Watermelon Slices",
+    description: "Cold watermelon, cut and ready to share.",
+    price: 3500,
+    image:
+      "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=400&q=70",
+    rating: 4.7,
+    reviews: 38,
+    category: "fruit",
+  },
+  {
+    id: "tropical-fruit-plate",
+    name: "Tropical Fruit Plate",
+    description: "Pineapple, mango, and banana on one plate.",
+    price: 6500,
+    image:
+      "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=400&q=70",
+    rating: 4.9,
+    reviews: 27,
+    category: "fruit",
+  },
+];
+
+export const ALCOHOL: MenuItem[] = [
+  {
+    id: "house-red-glass",
+    name: "House Red — Glass",
+    description: "A glass of the house red, poured to order.",
+    price: 8000,
+    image:
+      "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=400&q=70",
+    rating: 4.8,
+    reviews: 36,
+    category: "alcohol",
+    details: { alcoholKind: "wine" },
+  },
+  {
+    id: "house-red-bottle",
+    name: "House Red — Bottle",
+    description: "A full bottle of the house red for the table.",
+    price: 28000,
+    image:
+      "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=400&q=70",
+    rating: 4.8,
+    reviews: 22,
+    category: "alcohol",
+    details: { alcoholKind: "wine" },
+  },
+  {
+    id: "house-white-glass",
+    name: "House White — Glass",
+    description: "A chilled glass of the house white.",
+    price: 8000,
+    image:
+      "https://images.unsplash.com/photo-1474722883778-792e7990302f?auto=format&fit=crop&w=400&q=70",
+    rating: 4.7,
+    reviews: 28,
+    category: "alcohol",
+    details: { alcoholKind: "wine" },
+  },
+  {
+    id: "champagne-glass",
+    name: "Champagne — Glass",
+    description: "A chilled glass of champagne.",
+    price: 14000,
+    image:
+      "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?auto=format&fit=crop&w=400&q=70",
+    rating: 4.9,
+    reviews: 19,
+    badge: "CELEBRATE",
+    category: "alcohol",
+    details: { alcoholKind: "champagne" },
+  },
+  {
+    id: "chilled-beer",
+    name: "Chilled Beer",
+    description: "A cold bottle of beer.",
+    price: 4000,
+    image:
+      "https://images.unsplash.com/photo-1608270586620-248524c67de9?auto=format&fit=crop&w=400&q=70",
+    rating: 4.6,
+    reviews: 74,
+    category: "alcohol",
+    details: { alcoholKind: "beer" },
+  },
+  {
+    id: "palm-spritz",
+    name: "Palm Spritz",
+    description: "A light sparkling cocktail with citrus.",
+    price: 9000,
+    image:
+      "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=400&q=70",
+    rating: 4.8,
+    reviews: 31,
+    category: "alcohol",
+    details: { alcoholKind: "cocktail" },
+  },
+  {
+    id: "whisky-pour",
+    name: "Whisky Pour",
+    description: "A single pour of whisky.",
+    price: 10000,
+    image:
+      "https://images.unsplash.com/photo-1527281400683-1aae777175f8?auto=format&fit=crop&w=400&q=70",
+    rating: 4.7,
+    reviews: 17,
+    category: "alcohol",
+    details: { alcoholKind: "spirit" },
+  },
+];
+
+export const MENU_ADMIN_CATEGORIES: {
+  id: MenuItem["category"];
+  label: string;
+}[] = [
+  { id: "classic", label: "Classic pizza" },
+  { id: "cheese", label: "Cheese pizza" },
+  { id: "veggie", label: "Veggie pizza" },
+  { id: "meat", label: "Meat pizza" },
+  { id: "burger", label: "Burger" },
+  { id: "side", label: "Side" },
+  { id: "fruit", label: "Fruit parts" },
+  { id: "drink", label: "Soft drink" },
+  { id: "alcohol", label: "Wine & alcohol" },
+  { id: "combo", label: "Combo" },
+];
+
 export function formatPrice(value: number) {
   const amount = Number(value) || 0;
   return new Intl.NumberFormat("en-RW", {
@@ -551,6 +740,8 @@ export function normalizeComboSlots(
     "meat",
     "side",
     "drink",
+    "fruit",
+    "alcohol",
     "burger",
   ]);
   const slots: ComboSlot[] = [];
@@ -562,7 +753,10 @@ export function normalizeComboSlots(
     const categories = (
       Array.isArray(r.categories) ? r.categories : []
     )
-      .map((c) => String(c).trim().toLowerCase())
+      .map((c) => {
+        const value = String(c).trim().toLowerCase();
+        return value === "dessert" ? "fruit" : value;
+      })
       .filter((c): c is MenuItem["category"] =>
         allowed.has(c as MenuItem["category"]),
       );
@@ -629,7 +823,7 @@ export function comboChoicesKey(choices: ComboChoice[] | undefined) {
 }
 
 export function getAllMenuItems(): MenuItem[] {
-  return [...PIZZAS, ...COMBOS, ...SIDES, ...DRINKS, ...BURGERS];
+  return [...PIZZAS, ...COMBOS, ...SIDES, ...DRINKS, ...BURGERS, ...FRUIT, ...ALCOHOL];
 }
 
 export function getMenuItem(id: string): MenuItem | undefined {
@@ -698,6 +892,19 @@ const GALLERY_POOLS: Record<MenuItem["category"], string[]> = {
     "https://images.unsplash.com/photo-1606755962773-d324e0a13086?auto=format&fit=crop&w=1000&q=70",
     "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?auto=format&fit=crop&w=1000&q=70",
     "https://images.unsplash.com/photo-1520072959219-c595dc870360?auto=format&fit=crop&w=1000&q=70",
+  ],
+  fruit: [
+    "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=1000&q=70",
+    "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=1000&q=70",
+    "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=1000&q=70",
+    "https://images.unsplash.com/photo-1519996529931-28324d5a630e?auto=format&fit=crop&w=1000&q=70",
+  ],
+  alcohol: [
+    "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=1000&q=70",
+    "https://images.unsplash.com/photo-1474722883778-792e7990302f?auto=format&fit=crop&w=1000&q=70",
+    "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?auto=format&fit=crop&w=1000&q=70",
+    "https://images.unsplash.com/photo-1608270586620-248524c67de9?auto=format&fit=crop&w=1000&q=70",
+    "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1000&q=70",
   ],
 };
 
@@ -819,6 +1026,36 @@ function defaultsFor(item: MenuItem): ProductDetails {
     };
   }
 
+  if (item.category === "fruit") {
+    return {
+      ingredients: item.description
+        .replace(/\.$/, "")
+        .split(/,| and /)
+        .map((part) => part.trim())
+        .filter(Boolean),
+      prepTime: "Ready now",
+      calories: "40–120 kcal",
+      serves: "1 person",
+      allergens: [],
+      highlights: ["Cut fresh", "Chilled", "Easy add-on"],
+      longDescription: `${item.description} Fresh fruit parts from Palm Pizza Kitchen.`,
+    };
+  }
+
+  if (item.category === "alcohol") {
+    const kind = alcoholKindLabel(item.details?.alcoholKind);
+    return {
+      ingredients: [item.name],
+      prepTime: "Poured to order",
+      calories: "Varies",
+      serves: "1 person",
+      allergens: [],
+      highlights: [kind, "18+ only", "Pairs with pizza"],
+      longDescription: `${item.description} Served to guests 18 and over.`,
+      alcoholKind: normalizeAlcoholKind(item.details?.alcoholKind),
+    };
+  }
+
   if (item.category === "burger") {
     return {
       ingredients: item.description
@@ -863,6 +1100,7 @@ export function getProductDetails(item: MenuItem): ProductDetails {
     longDescription: fromApi.longDescription || description,
     sizes: normalizeSizePrices(fromApi.sizes),
     comboSlots: normalizeComboSlots(fromApi.comboSlots),
+    alcoholKind: normalizeAlcoholKind(fromApi.alcoholKind),
   };
 }
 
@@ -876,8 +1114,39 @@ export function categoryLabel(category: MenuItem["category"]) {
     combo: "Combo Deal",
     drink: "Drink",
     burger: "Burger",
+    fruit: "Fruit parts",
+    alcohol: "Wine & alcohol",
   };
   return labels[category];
+}
+
+export function categoryPage(category: MenuItem["category"]) {
+  switch (category) {
+    case "side":
+      return { label: "Sides", path: "/sides" };
+    case "combo":
+      return { label: "Combos", path: "/combos" };
+    case "drink":
+      return { label: "Drinks", path: "/drinks" };
+    case "fruit":
+      return { label: "Fruit parts", path: "/fruit" };
+    case "alcohol":
+      return { label: "Wine & bar", path: "/bar" };
+    case "burger":
+      return { label: "Burgers", path: "/burgers" };
+    default:
+      return { label: "Pizzas", path: "/pizzas" };
+  }
+}
+
+export function categoryDisplay(item: {
+  category: MenuItem["category"];
+  details?: Partial<ProductDetails> | null;
+}) {
+  if (item.category === "alcohol") {
+    return alcoholKindLabel(item.details?.alcoholKind);
+  }
+  return categoryLabel(item.category);
 }
 
 export function productPath(id: string) {

@@ -41,6 +41,8 @@ const VIBE_COPY: Record<PickVibe, { label: string; hint: string }> = {
   surprise: { label: "Surprise me", hint: "You pick" },
 };
 
+const SKIP_PICK = new Set<MenuItem["category"]>(["drink", "fruit", "alcohol"]);
+
 const HUNGER_COPY: Record<PickHunger, { label: string; hint: string }> = {
   light: { label: "Small hunger", hint: "Snack or light meal" },
   normal: { label: "Normal", hint: "Standard dinner" },
@@ -134,7 +136,7 @@ export function pickFromMenu(
   items: MenuItem[],
   answers: PalmPickAnswers,
 ): PalmPickResult | null {
-  const pool = items.filter((item) => item.category !== "drink");
+  const pool = items.filter((item) => !SKIP_PICK.has(item.category));
   if (!pool.length) return null;
 
   const ranked = pool
@@ -161,7 +163,7 @@ export function pickAlternatives(
   limit = 2,
 ) {
   return items
-    .filter((item) => item.id !== excludeId && item.category !== "drink")
+    .filter((item) => item.id !== excludeId && !SKIP_PICK.has(item.category))
     .map((item) => ({ item, score: scoreMenuItem(item, answers) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)

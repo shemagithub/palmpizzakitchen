@@ -204,6 +204,8 @@ export const STOREFRONT_LINKS = [
   { href: "/burgers", label: "Burgers", desc: "Beef, chicken & veggie" },
   { href: "/sides", label: "Sides", desc: "Sides & extras" },
   { href: "/drinks", label: "Drinks", desc: "Soft drinks & juice" },
+  { href: "/fruit", label: "Fruit parts", desc: "Fruit cups, slices, plates" },
+  { href: "/bar", label: "Wine & bar", desc: "Wine, champagne, other alcohol" },
   { href: "/combos", label: "Combos", desc: "Meal deals" },
   { href: "/offers", label: "Offers", desc: "Promo codes" },
   { href: "/admin/about", label: "About page", desc: "Edit About content" },

@@ -132,11 +132,18 @@ export const DEFAULT_QUICK_CATEGORIES: QuickCategoryItem[] = [
       "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=200&q=70",
   },
   {
-    id: "desserts",
-    label: "Desserts",
-    href: "/sides",
+    id: "fruit",
+    label: "Fruit parts",
+    href: "/fruit",
     image:
-      "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=200&q=70",
+      "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=200&q=70",
+  },
+  {
+    id: "wine",
+    label: "Wine & bar",
+    href: "/bar",
+    image:
+      "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=200&q=70",
   },
 ];
 
@@ -264,6 +271,39 @@ export function parseTrustPoints(raw?: string | null): TrustPointItem[] {
   }
 }
 
+/** Keep fruit and wine on the round shortcut row even if an older saved list left them out. */
+export function withFruitAndWineShortcuts(
+  items: QuickCategoryItem[],
+): QuickCategoryItem[] {
+  if (!items.length) return items;
+  const fruit = DEFAULT_QUICK_CATEGORIES.find((item) => item.id === "fruit");
+  const wine = DEFAULT_QUICK_CATEGORIES.find((item) => item.id === "wine");
+  if (!fruit || !wine) return items;
+
+  const hasFruit = items.some(
+    (item) =>
+      item.id === "fruit" ||
+      item.href === "/fruit" ||
+      item.label.toLowerCase().includes("fruit"),
+  );
+  const hasWine = items.some(
+    (item) =>
+      item.id === "wine" ||
+      item.href === "/bar" ||
+      /wine|champagne|alcohol/i.test(item.label),
+  );
+  const extras: QuickCategoryItem[] = [];
+  if (!hasFruit) extras.push({ ...fruit, label: "Fruit" });
+  if (!hasWine) extras.push({ ...wine, label: "Wine" });
+  if (!extras.length) return items;
+
+  const drinksIndex = items.findIndex(
+    (item) => item.id === "drinks" || item.href === "/drinks",
+  );
+  const at = drinksIndex >= 0 ? drinksIndex + 1 : items.length;
+  return [...items.slice(0, at), ...extras, ...items.slice(at)];
+}
+
 export function parseQuickCategories(raw?: string | null): QuickCategoryItem[] {
   if (!raw?.trim()) return [];
   try {
@@ -276,14 +316,34 @@ export function parseQuickCategories(raw?: string | null): QuickCategoryItem[] {
         const label = String(row.label ?? "").trim();
         const image = String(row.image ?? "").trim();
         if (!label || !image) return null;
-        const href = String(row.href ?? "/pizzas").trim() || "/pizzas";
+        let href = String(row.href ?? "/pizzas").trim() || "/pizzas";
         const fallbackId = label
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-+|-+$/g, "");
         const id =
           String(row.id ?? "").trim() || fallbackId || newQuickCategoryId();
-        return { id, label, href, image };
+        const fruitShortcut =
+          id === "desserts" ||
+          id === "dessert" ||
+          id === "fruit" ||
+          label.toLowerCase() === "desserts" ||
+          label.toLowerCase() === "dessert";
+        if (
+          fruitShortcut &&
+          (href === "/sides" ||
+            href === "/sides/" ||
+            href === "/desserts" ||
+            href === "/desserts/")
+        ) {
+          href = "/fruit";
+        }
+        return {
+          id,
+          label: fruitShortcut ? "Fruit parts" : label,
+          href,
+          image,
+        };
       })
       .filter((t): t is QuickCategoryItem => Boolean(t));
   } catch {

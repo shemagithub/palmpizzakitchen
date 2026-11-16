@@ -84,10 +84,17 @@ const DAILY: NavItem[] = [
 const FOOD: NavItem[] = [
   {
     label: "Food menu",
-    hint: "Pizzas & sides",
+    hint: "Pizzas, burgers, sides",
     href: "/admin/menu",
     Icon: GridIcon,
     short: "Menu",
+  },
+  {
+    label: "Fruit, wine & drinks",
+    hint: "Checkout add-ons",
+    href: "/admin/addons",
+    Icon: LeafIcon,
+    short: "Extras",
   },
   {
     label: "Combos",

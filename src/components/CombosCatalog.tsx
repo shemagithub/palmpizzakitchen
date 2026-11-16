@@ -8,9 +8,9 @@ export default function CombosCatalog() {
 
   return (
     <section className="bg-pam-warm py-10 md:py-14">
-      <div className="mx-auto max-w-[1600px] px-5 md:px-8">
+      <div className="mx-auto max-w-[1600px] px-3 sm:px-5 md:px-8">
         {loading && !combos.length ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
@@ -19,7 +19,7 @@ export default function CombosCatalog() {
             ))}
           </div>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
             {combos.map((item) => (
               <ProductCard key={item.id} item={item} />
             ))}

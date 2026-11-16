@@ -26,10 +26,11 @@ import {
 import { orderBlockReason } from "@/lib/orderRules";
 import { packagingFeeFor } from "@/lib/packagingFee";
 import { promoLineBadge } from "@/lib/offers";
+import CheckoutAddOns from "@/components/CheckoutAddOns";
 
 type CartLine = GuestCartLine;
 
-type Step = "details" | "pay" | "confirming" | "done";
+type Step = "extras" | "details" | "pay" | "confirming" | "done";
 type PayMethod = "card" | "airtel" | "momo";
 
 const PAY_OPTIONS: {
@@ -73,7 +74,7 @@ function digitsOnly(value: string) {
 export default function CheckoutClient() {
   const { user } = useAuthUser();
   const { settings } = useSiteSettings();
-  const [step, setStep] = useState<Step>("details");
+  const [step, setStep] = useState<Step>("extras");
   const [orderId, setOrderId] = useState("");
   const [items, setItems] = useState<CartLine[]>([]);
   const [name, setName] = useState("");
@@ -136,6 +137,17 @@ export default function CheckoutClient() {
       }
     }
     void load();
+  }, []);
+
+  useEffect(() => {
+    const onCart = () => {
+      void loadShopCart({ syncGuest: false }).then((cart) => {
+        setItems(cart.items);
+        writeCartSnapshot(cart.items);
+      });
+    };
+    window.addEventListener("palm-cart-updated", onCart);
+    return () => window.removeEventListener("palm-cart-updated", onCart);
   }, []);
 
   useEffect(() => {
@@ -469,13 +481,12 @@ export default function CheckoutClient() {
   };
 
   const steps = [
+    { id: "extras", label: "Add-ons" },
     { id: "details", label: fulfillment === "pickup" ? "Contact" : "Location" },
     { id: "pay", label: "Pay" },
-    { id: "done", label: "Done" },
   ] as const;
 
-  const activeStepIndex =
-    step === "details" ? 0 : step === "done" ? 2 : 1;
+  const activeStepIndex = step === "extras" ? 0 : step === "details" ? 1 : 2;
 
   if (step === "done") {
     const methodTitle =
@@ -676,20 +687,46 @@ export default function CheckoutClient() {
               </div>
             )}
 
+            {step === "extras" && (
+              <CheckoutAddOns
+                cartItemIds={items.map((item) => item.id)}
+                canContinue={!cartLoading && items.length > 0 && canCheckout}
+                onContinue={() => {
+                  setError("");
+                  if (!items.length) {
+                    setError("Your cart is empty.");
+                    return;
+                  }
+                  setStep("details");
+                }}
+              />
+            )}
+
             {step === "details" && (
               <div className="soft-card rounded-[1.35rem] border border-pam-border/70 bg-white p-4 sm:rounded-[1.75rem] sm:p-6 md:p-7">
-                <h2 className="font-[family-name:var(--font-oswald)] text-xl sm:text-2xl">
-                  {fulfillment === "pickup"
-                    ? "Pickup details"
-                    : "Where should we deliver?"}
-                </h2>
-                <p className="mt-1 text-sm text-pam-muted">
-                  {fulfillment === "pickup"
-                    ? packaging
-                      ? `We’ll have your order ready at the shop. Packaging ${formatPrice(packaging)}. No delivery fee.`
-                      : "We’ll have your order ready at the shop. No delivery fee."
-                    : "Tell us your location in Kigali - then choose how to pay."}
-                </p>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h2 className="font-[family-name:var(--font-oswald)] text-xl sm:text-2xl">
+                      {fulfillment === "pickup"
+                        ? "Pickup details"
+                        : "Where should we deliver?"}
+                    </h2>
+                    <p className="mt-1 text-sm text-pam-muted">
+                      {fulfillment === "pickup"
+                        ? packaging
+                          ? `We’ll have your order ready at the shop. Packaging ${formatPrice(packaging)}. No delivery fee.`
+                          : "We’ll have your order ready at the shop. No delivery fee."
+                        : "Tell us your location in Kigali - then choose how to pay."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setStep("extras")}
+                    className="text-sm font-bold text-pam-red"
+                  >
+                    Add fruit, wine, or drink
+                  </button>
+                </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <button
@@ -1180,7 +1217,7 @@ export default function CheckoutClient() {
       </div>
 
       {/* Mobile sticky CTA above bottom nav */}
-      {(step === "details" || step === "pay") && (
+      {(step === "extras" || step === "details" || step === "pay") && (
         <div className="fixed inset-x-0 bottom-[calc(4.85rem+env(safe-area-inset-bottom))] z-40 border-t border-pam-border/80 bg-white/95 px-3 py-2.5 backdrop-blur md:hidden">
           <div className="mx-auto flex max-w-lg items-center gap-3">
             <div className="min-w-0 flex-1">
@@ -1191,11 +1228,22 @@ export default function CheckoutClient() {
                 {formatPrice(total)}
               </p>
             </div>
-            {step === "details" ? (
+            {step === "extras" || step === "details" ? (
               <button
                 type="button"
-                onClick={goToPay}
-                disabled={!canCheckout}
+                onClick={() => {
+                  if (step === "extras") {
+                    setError("");
+                    if (!items.length) {
+                      setError("Your cart is empty.");
+                      return;
+                    }
+                    setStep("details");
+                    return;
+                  }
+                  goToPay();
+                }}
+                disabled={!canCheckout || (step === "extras" && !items.length)}
                 className="shrink-0 rounded-2xl bg-pam-red px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
               >
                 Continue →

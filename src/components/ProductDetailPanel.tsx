@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   availableSizeOptions,
+  categoryDisplay,
   categoryLabel,
   comboLineDisplayName,
   defaultSizeId,
@@ -134,7 +135,7 @@ export default function ProductDetailPanel({ item, details }: Props) {
   return (
     <div className="min-w-0 pb-24 md:pb-0">
       <p className="text-[11px] font-semibold tracking-[0.16em] text-pam-red uppercase sm:text-sm">
-        {categoryLabel(item.category)}
+        {categoryDisplay(item)}
         {item.badge ? ` · ${item.badge}` : ""}
       </p>
 

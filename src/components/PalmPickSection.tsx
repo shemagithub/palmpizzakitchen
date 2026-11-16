@@ -11,7 +11,9 @@ const PALM_PICK_FAB_PATHS = [
   "/pizzas",
   "/burgers",
   "/sides",
+  "/fruit",
   "/drinks",
+  "/bar",
   "/combos",
 ] as const;
 

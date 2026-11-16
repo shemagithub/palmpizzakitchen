@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { MenuItem } from "@/data/menu";
+import { categoryPage, type MenuItem } from "@/data/menu";
 import {
   minDeliveryFee,
   parseDeliveryAreaFees,
@@ -570,18 +570,7 @@ export function productPageJsonLd(
 }
 
 function categoryParent(category: MenuItem["category"]) {
-  switch (category) {
-    case "side":
-      return { label: "Sides", path: "/sides" };
-    case "combo":
-      return { label: "Combos", path: "/combos" };
-    case "drink":
-      return { label: "Drinks", path: "/drinks" };
-    case "burger":
-      return { label: "Burgers", path: "/burgers" };
-    default:
-      return { label: "Pizzas", path: "/pizzas" };
-  }
+  return categoryPage(category);
 }
 
 export async function productPageJsonLdForItem(item: MenuItem) {

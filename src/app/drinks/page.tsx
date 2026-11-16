@@ -21,7 +21,7 @@ export default function DrinksPage() {
       <MenuCategoryJsonLd title="Drinks" path="/drinks" category="drink" />
       <PageHero
         title="Drinks"
-        subtitle="Ice-cold sodas, juice, and water - the perfect pour next to a hot pizza."
+        subtitle="Ice-cold sodas, juice, and water. Wine and champagne are on Wine & bar."
       />
       <DrinksCatalog />
     </>

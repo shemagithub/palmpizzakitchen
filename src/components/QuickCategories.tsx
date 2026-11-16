@@ -6,13 +6,19 @@ import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import { useSiteSettings } from "@/components/SiteSettingsProvider";
 import { resolveMediaUrl } from "@/lib/api";
-import { parseQuickCategories } from "@/lib/homeContent";
+import {
+  parseQuickCategories,
+  withFruitAndWineShortcuts,
+} from "@/lib/homeContent";
 
 export default function QuickCategories() {
   const pathname = usePathname();
   const { settings, loading } = useSiteSettings();
   const cats = useMemo(
-    () => parseQuickCategories(settings.quick_categories),
+    () =>
+      withFruitAndWineShortcuts(
+        parseQuickCategories(settings.quick_categories),
+      ),
     [settings.quick_categories],
   );
 

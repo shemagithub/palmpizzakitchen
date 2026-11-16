@@ -26,6 +26,8 @@ const DESTINATIONS = [
   { href: "/burgers", label: "Burgers" },
   { href: "/sides", label: "Sides" },
   { href: "/drinks", label: "Drinks" },
+  { href: "/fruit", label: "Fruit parts" },
+  { href: "/bar", label: "Wine & bar" },
   { href: "/combos", label: "Combos" },
   { href: "/offers", label: "Offers" },
   { href: "/about", label: "About" },
@@ -185,7 +187,7 @@ export default function AdminCategoriesPage() {
 
   const restoreDefaults = async () => {
     const confirmed = window.confirm(
-      "Replace the current list with the original shortcuts (All, Pizzas, Garlic Bread, Sides, Drinks, Desserts)?",
+      "Replace the current list with the original shortcuts (All, Pizzas, Garlic Bread, Sides, Drinks, Fruit parts, Wine & bar)?",
     );
     if (!confirmed) return;
     const saved = await persist(DEFAULT_QUICK_CATEGORIES.map((t) => ({ ...t })));

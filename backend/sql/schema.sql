@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
   rating DECIMAL(3,1) NOT NULL DEFAULT 5.0,
   reviews INT UNSIGNED NOT NULL DEFAULT 0,
   badge VARCHAR(40) NULL,
-  category ENUM('classic','cheese','veggie','meat','side','combo','drink','burger') NOT NULL,
+  category ENUM('classic','cheese','veggie','meat','side','combo','drink','burger','dessert','fruit','alcohol') NOT NULL,
   details LONGTEXT NULL,
   active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

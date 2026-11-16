@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import mysql from "mysql2/promise";
+import { FRUIT_STARTERS, MENU_CATEGORY_ENUM } from "./data/menuExtras.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -121,13 +122,41 @@ export async function ensureSchema() {
         `SHOW COLUMNS FROM \`${database}\`.menu_items LIKE 'category'`,
       );
       const catType = String(catCols?.[0]?.Type || "");
-      if (catType && (!catType.includes("drink") || !catType.includes("burger"))) {
+      if (
+        catType &&
+        (!catType.includes("fruit") || !catType.includes("alcohol"))
+      ) {
         await connection.query(
           `ALTER TABLE \`${database}\`.menu_items
            MODIFY COLUMN category
-           ENUM('classic','cheese','veggie','meat','side','combo','drink','burger') NOT NULL`,
+           ${MENU_CATEGORY_ENUM}`,
         );
-        console.log("→ Expanded menu_items.category for drinks/burgers");
+        console.log("→ Expanded menu_items.category for fruit parts and alcohol");
+      }
+      await connection.query(
+        `UPDATE \`${database}\`.menu_items SET category = 'fruit' WHERE category = 'dessert'`,
+      );
+      for (const item of FRUIT_STARTERS) {
+        const [updated] = await connection.query(
+          `UPDATE \`${database}\`.menu_items
+           SET name = ?, description = ?, price = ?, image = ?, badge = ?, category = 'fruit'
+           WHERE id = ? AND name = ?`,
+          [
+            item.name,
+            item.description,
+            item.price,
+            item.image,
+            item.badge,
+            item.id,
+            item.fromName,
+          ],
+        );
+        if (updated?.affectedRows) {
+          await connection.query(
+            `UPDATE \`${database}\`.menu_images SET image_url = ? WHERE item_id = ?`,
+            [item.image, item.id],
+          );
+        }
       }
     } catch (err) {
       console.error("Menu category migration skipped:", err.message);

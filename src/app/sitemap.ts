@@ -32,6 +32,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     {
+      url: sitePath("/fruit"),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: sitePath("/bar"),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
       url: sitePath("/burgers"),
       lastModified: now,
       changeFrequency: "weekly",

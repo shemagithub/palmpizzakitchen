@@ -130,8 +130,14 @@ export default function AdminDashboardPage() {
           {
             href: "/admin/menu",
             title: "Change food menu",
-            desc: "Add pizzas or sides, change prices, or hide an item.",
+            desc: "Add pizzas, burgers, and sides. Change prices, or hide an item.",
             tone: "ink",
+          },
+          {
+            href: "/admin/addons",
+            title: "Fruit, wine & drinks",
+            desc: "Control the fruit parts, wine, champagne, and soft drinks offered at checkout.",
+            tone: "red",
           },
           {
             href: "/admin/combos",

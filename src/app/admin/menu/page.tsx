@@ -12,7 +12,17 @@ import {
   AdminPageHeader,
   AdminSkeleton,
 } from "@/components/admin/AdminUI";
-import { formatPrice, getEnabledSizes, type ProductDetails } from "@/data/menu";
+import {
+  ALCOHOL_KINDS,
+  MENU_ADMIN_CATEGORIES,
+  alcoholKindLabel,
+  normalizeAlcoholKind,
+  formatPrice,
+  getEnabledSizes,
+  type AlcoholKind,
+  type MenuItem,
+  type ProductDetails,
+} from "@/data/menu";
 import { api, resolveMediaUrl } from "@/lib/api";
 
 type Item = {
@@ -51,21 +61,21 @@ type FormState = {
   priceSmall: string;
   priceMedium: string;
   priceLarge: string;
+  alcoholKind: AlcoholKind;
   active: boolean;
 };
 
-const CATEGORIES = [
-  "classic",
-  "cheese",
-  "veggie",
-  "meat",
-  "side",
-  "drink",
-  "burger",
-  "combo",
-] as const;
+type MenuFilter = "All" | MenuItem["category"] | "Hidden";
 
-const FILTERS = ["All", ...CATEGORIES, "Hidden"] as const;
+const FILTERS: MenuFilter[] = [
+  "All",
+  ...MENU_ADMIN_CATEGORIES.map((row) => row.id),
+  "Hidden",
+];
+
+function categoryAdminLabel(id: string) {
+  return MENU_ADMIN_CATEGORIES.find((row) => row.id === id)?.label || id;
+}
 
 const EMPTY_FORM: FormState = {
   id: "",
@@ -88,6 +98,7 @@ const EMPTY_FORM: FormState = {
   priceSmall: "",
   priceMedium: "",
   priceLarge: "",
+  alcoholKind: "wine",
   active: true,
 };
 
@@ -150,6 +161,7 @@ function toForm(item?: Item | null): FormState {
       sizeOn && sizes?.m != null ? String(Math.round(Number(sizes.m) || 0)) : "",
     priceLarge:
       sizeOn && sizes?.l != null ? String(Math.round(Number(sizes.l) || 0)) : "",
+    alcoholKind: normalizeAlcoholKind(item.details?.alcoholKind) || "wine",
     active: item.active,
   };
 }
@@ -161,7 +173,7 @@ export default function AdminMenuPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState("");
-  const [cat, setCat] = useState<(typeof FILTERS)[number]>("All");
+  const [cat, setCat] = useState<MenuFilter>("All");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -201,15 +213,27 @@ export default function AdminMenuPage() {
     });
   }, [items, query, cat]);
 
-  const openCreate = () => {
+  const openCreate = (forced?: string) => {
     setEditingId(null);
-    const suggested = suggestedSizePrices(12000);
+    const fromFilter = cat !== "All" && cat !== "Hidden" ? cat : "classic";
+    const category = MENU_ADMIN_CATEGORIES.some((row) => row.id === forced)
+      ? String(forced)
+      : fromFilter;
+    const pizza = PIZZA_CATEGORIES.has(category);
+    const suggested = suggestedSizePrices(pizza ? 12000 : 8000);
     setForm({
       ...EMPTY_FORM,
-      category: "classic",
-      sizesEnabled: true,
-      price: suggested.priceMedium,
-      ...suggested,
+      category,
+      alcoholKind: "wine",
+      sizesEnabled: pizza,
+      price: pizza
+        ? suggested.priceMedium
+        : category === "fruit"
+          ? "6500"
+          : category === "alcohol"
+            ? "8000"
+            : "",
+      ...(pizza ? suggested : {}),
     });
     setEditorOpen(true);
     setOk("");
@@ -312,6 +336,9 @@ export default function AdminMenuPage() {
           allergens: textToLines(form.allergens),
           highlights: textToLines(form.highlights),
           ...(sizes ? { sizes } : { sizes: { enabled: false } }),
+          ...(form.category === "alcohol"
+            ? { alcoholKind: form.alcoholKind || "wine" }
+            : {}),
         },
       };
 
@@ -384,22 +411,42 @@ export default function AdminMenuPage() {
       <AdminPageHeader
         eyebrow="Food"
         title="Food menu"
-        subtitle="Edit pizzas, sides, drinks, and combos - including gallery photos and product-page details."
+        subtitle="Pizzas, burgers, sides, and combos. Fruit parts, wine, and soft drinks are controlled on Fruit, wine & drinks."
         actions={
           <>
             <Link
-              href="/burgers"
+              href="/admin/addons"
+              className="rounded-xl bg-pam-ink px-3.5 py-2.5 text-sm font-bold text-white"
+            >
+              Manage fruit, wine & drinks
+            </Link>
+            <button
+              type="button"
+              onClick={() => openCreate("fruit")}
+              className="rounded-xl bg-white px-3.5 py-2.5 text-sm font-bold text-pam-ink ring-1 ring-pam-border"
+            >
+              + Add fruit parts
+            </button>
+            <button
+              type="button"
+              onClick={() => openCreate("alcohol")}
+              className="rounded-xl bg-white px-3.5 py-2.5 text-sm font-bold text-pam-ink ring-1 ring-pam-border"
+            >
+              + Add wine or alcohol
+            </button>
+            <Link
+              href="/fruit"
               target="_blank"
               className="rounded-xl bg-white px-3.5 py-2.5 text-sm font-bold text-pam-ink ring-1 ring-pam-border"
             >
-              See burgers
+              See fruit parts
             </Link>
             <Link
-              href="/drinks"
+              href="/bar"
               target="_blank"
               className="rounded-xl bg-white px-3.5 py-2.5 text-sm font-bold text-pam-ink ring-1 ring-pam-border"
             >
-              See drinks
+              See wine & bar
             </Link>
             <button
               type="button"
@@ -410,7 +457,7 @@ export default function AdminMenuPage() {
             </button>
             <button
               type="button"
-              onClick={openCreate}
+              onClick={() => openCreate()}
               className="rounded-xl bg-pam-red px-3.5 py-2.5 text-sm font-bold text-white"
             >
               + Add item
@@ -418,6 +465,16 @@ export default function AdminMenuPage() {
           </>
         }
       />
+
+      <AdminHelpTip title="Fruit parts and the wine list" dismissKey="menu-extras">
+        <strong>Add fruit parts</strong> puts fruit cups, slices, and plates on
+        the Fruit parts page. <strong>Add wine or alcohol</strong> asks you to
+        pick Wine, Champagne, Beer, Cocktail, Spirits, or Other alcohol, and
+        that choice is the filter on Wine &amp; bar. Soft drinks stay under
+        Soft drink. If a glass and a bottle have different prices, add them as
+        two items. Older dessert items now appear under Fruit parts — edit or
+        delete any that are not fruit.
+      </AdminHelpTip>
 
       <AdminHelpTip title="How to show Small / Medium / Large" dismissKey="menu-sizes">
         Edit a pizza, keep <strong>Sell by size</strong> turned ON, enter the three
@@ -430,20 +487,29 @@ export default function AdminMenuPage() {
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-          {FILTERS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setCat(c)}
-              className={`shrink-0 rounded-full px-3 py-2 text-xs font-bold capitalize transition ${
-                cat === c
-                  ? "bg-pam-red text-white"
-                  : "bg-white text-pam-muted ring-1 ring-pam-border"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
+          {FILTERS.map((c) => {
+            const count =
+              c === "All"
+                ? items.length
+                : c === "Hidden"
+                  ? items.filter((item) => !item.active).length
+                  : items.filter((item) => item.category === c).length;
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCat(c)}
+                className={`shrink-0 rounded-full px-3 py-2 text-xs font-bold transition ${
+                  cat === c
+                    ? "bg-pam-red text-white"
+                    : "bg-white text-pam-muted ring-1 ring-pam-border"
+                }`}
+              >
+                {c === "All" || c === "Hidden" ? c : categoryAdminLabel(c)}
+                <span className="ml-1 opacity-80">{count}</span>
+              </button>
+            );
+          })}
         </div>
         <input
           value={query}
@@ -508,8 +574,10 @@ export default function AdminMenuPage() {
                     <h2 className="truncate font-[family-name:var(--font-oswald)] text-xl">
                       {item.name}
                     </h2>
-                    <p className="text-xs capitalize text-pam-muted">
-                      {item.category}
+                    <p className="text-xs text-pam-muted">
+                      {item.category === "alcohol"
+                        ? `${categoryAdminLabel(item.category)} · ${alcoholKindLabel(item.details?.alcoholKind)}`
+                        : categoryAdminLabel(item.category)}
                     </p>
                   </div>
                   <p className="shrink-0 text-right font-[family-name:var(--font-oswald)] text-lg sm:text-xl">
@@ -689,12 +757,30 @@ export default function AdminMenuPage() {
                       });
                     }}
                   >
-                    {CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
+                    {MENU_ADMIN_CATEGORIES.map((row) => (
+                      <option key={row.id} value={row.id}>
+                        {row.label}
                       </option>
                     ))}
                   </select>
+                  {form.category === "fruit" && (
+                    <p className="mt-1.5 text-xs text-pam-muted">
+                      Shows on the Fruit parts page. Use this for cut fruit,
+                      fruit cups, and fruit plates.
+                    </p>
+                  )}
+                  {form.category === "drink" && (
+                    <p className="mt-1.5 text-xs text-pam-muted">
+                      Sodas, juice, and water. Use Wine & alcohol for wine,
+                      champagne, beer, and spirits.
+                    </p>
+                  )}
+                  {form.category === "alcohol" && (
+                    <p className="mt-1.5 text-xs text-pam-muted">
+                      Shows on Wine & bar under the type you pick. Add a glass
+                      and a bottle as two items when the price is different.
+                    </p>
+                  )}
                 </div>
                 {!form.sizesEnabled && (
                   <div>
@@ -715,6 +801,34 @@ export default function AdminMenuPage() {
                   </div>
                 )}
               </div>
+
+              {form.category === "alcohol" && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold">
+                    Type
+                  </label>
+                  <select
+                    className="input-field rounded-2xl"
+                    value={form.alcoholKind}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        alcoholKind: e.target.value as AlcoholKind,
+                      }))
+                    }
+                  >
+                    {ALCOHOL_KINDS.map((kind) => (
+                      <option key={kind.id} value={kind.id}>
+                        {kind.label} — {kind.hint}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1.5 text-xs text-pam-muted">
+                    Customers filter the Wine & bar page by this type. Alcohol
+                    is for guests 18 and over.
+                  </p>
+                </div>
+              )}
 
               <div className="rounded-2xl border-2 border-pam-red/35 bg-pam-red/5 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">

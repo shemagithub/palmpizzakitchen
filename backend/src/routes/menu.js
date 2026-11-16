@@ -13,6 +13,23 @@ const CATEGORIES = new Set([
   "combo",
   "drink",
   "burger",
+  "dessert",
+  "fruit",
+  "alcohol",
+]);
+
+function normalizeCategory(category) {
+  const value = String(category || "").trim().toLowerCase();
+  return value === "dessert" ? "fruit" : value;
+}
+
+const ALCOHOL_KINDS = new Set([
+  "wine",
+  "champagne",
+  "beer",
+  "cocktail",
+  "spirit",
+  "other",
 ]);
 
 function parseDetails(raw) {
@@ -60,7 +77,26 @@ const COMBO_SLOT_CATEGORIES = new Set([
   "side",
   "drink",
   "burger",
+  "dessert",
+  "fruit",
+  "alcohol",
 ]);
+
+function parseAlcoholKind(input) {
+  if (!input || typeof input !== "object") return undefined;
+  const raw = String(input.alcoholKind || "")
+    .trim()
+    .toLowerCase();
+  return ALCOHOL_KINDS.has(raw) ? raw : undefined;
+}
+
+function withAlcoholKind(category, details) {
+  if (category !== "alcohol") return details;
+  const next =
+    details && typeof details === "object" ? { ...details } : {};
+  if (!parseAlcoholKind(next)) next.alcoholKind = "other";
+  return next;
+}
 
 function parseComboSlots(input) {
   const raw = Array.isArray(input?.comboSlots)
@@ -77,8 +113,8 @@ function parseComboSlots(input) {
     const categories = (
       Array.isArray(row.categories) ? row.categories : []
     )
-      .map((c) => String(c).trim().toLowerCase())
-      .filter((c) => COMBO_SLOT_CATEGORIES.has(c));
+      .map((c) => normalizeCategory(c))
+      .filter((c) => COMBO_SLOT_CATEGORIES.has(c) && c !== "dessert");
     if (!id || !label || !categories.length) continue;
     const itemIds = Array.isArray(row.itemIds)
       ? row.itemIds.map((x) => String(x).trim()).filter(Boolean)
@@ -107,6 +143,7 @@ function normalizeDetails(input) {
 
   const sizes = parseSizes(input);
   const comboSlots = parseComboSlots(input);
+  const alcoholKind = parseAlcoholKind(input);
   const out = {
     ingredients: list(input.ingredients),
     allergens: list(input.allergens),
@@ -117,6 +154,7 @@ function normalizeDetails(input) {
     longDescription: String(input.longDescription || "").trim(),
     ...(sizes ? { sizes } : {}),
     ...(comboSlots ? { comboSlots } : {}),
+    ...(alcoholKind ? { alcoholKind } : {}),
   };
 
   const hasAny =
@@ -128,7 +166,8 @@ function normalizeDetails(input) {
     out.serves ||
     out.longDescription ||
     Boolean(sizes) ||
-    Boolean(comboSlots);
+    Boolean(comboSlots) ||
+    Boolean(alcoholKind);
 
   return hasAny ? out : undefined;
 }
@@ -161,6 +200,9 @@ function serializeDetails(raw) {
   ) {
     delete details.comboSlots;
   }
+  const alcoholKind = parseAlcoholKind(raw);
+  if (alcoholKind) details.alcoholKind = alcoholKind;
+  else delete details.alcoholKind;
   const hasAny =
     (details.ingredients && details.ingredients.length) ||
     (details.allergens && details.allergens.length) ||
@@ -170,7 +212,8 @@ function serializeDetails(raw) {
     details.serves ||
     details.longDescription ||
     details.sizes ||
-    (details.comboSlots && details.comboSlots.length);
+    (details.comboSlots && details.comboSlots.length) ||
+    details.alcoholKind;
   return hasAny ? JSON.stringify(details) : null;
 }
 
@@ -186,7 +229,7 @@ function mapItem(row, images = []) {
     rating: Number(row.rating),
     reviews: Number(row.reviews),
     badge: row.badge || undefined,
-    category: row.category,
+    category: normalizeCategory(row.category),
     details: parseDetails(row.details),
     active: Boolean(row.active),
   };
@@ -336,7 +379,8 @@ router.post("/", adminRequired, async (req, res) => {
     if (!name || !description || price == null || !image || !category) {
       return res.status(400).json({ error: "Missing required menu fields." });
     }
-    if (!CATEGORIES.has(category)) {
+    const menuCategory = normalizeCategory(category);
+    if (!CATEGORIES.has(menuCategory)) {
       return res.status(400).json({ error: "Invalid category." });
     }
     const numericPrice = Number(price);
@@ -347,6 +391,7 @@ router.post("/", adminRequired, async (req, res) => {
     const id = await uniqueId(rawId ? slugify(rawId) : slugify(name));
     const gallery = normalizeImageList(req.body, image);
     const primary = gallery[0] || image.trim();
+    const storedDetails = withAlcoholKind(menuCategory, details);
 
     await query(
       `INSERT INTO menu_items
@@ -361,8 +406,8 @@ router.post("/", adminRequired, async (req, res) => {
         Number(rating) || 4.8,
         Number(reviews) || 0,
         badge?.trim() || null,
-        category,
-        serializeDetails(details),
+        menuCategory,
+        serializeDetails(storedDetails),
         active ? 1 : 0,
       ],
     );
@@ -401,7 +446,8 @@ router.put("/:id", adminRequired, async (req, res) => {
     if (!name || !description || price == null || !image || !category) {
       return res.status(400).json({ error: "Missing required menu fields." });
     }
-    if (!CATEGORIES.has(category)) {
+    const menuCategory = normalizeCategory(category);
+    if (!CATEGORIES.has(menuCategory)) {
       return res.status(400).json({ error: "Invalid category." });
     }
     const numericPrice = Number(price);
@@ -411,6 +457,7 @@ router.put("/:id", adminRequired, async (req, res) => {
 
     const gallery = normalizeImageList(req.body, image);
     const primary = gallery[0] || image.trim();
+    const storedDetails = withAlcoholKind(menuCategory, details);
 
     await query(
       `UPDATE menu_items
@@ -422,11 +469,11 @@ router.put("/:id", adminRequired, async (req, res) => {
         description.trim(),
         numericPrice,
         primary,
-        category,
+        menuCategory,
         badge?.trim() || null,
         Number(rating) || 4.8,
         Number(reviews) || 0,
-        serializeDetails(details),
+        serializeDetails(storedDetails),
         active ? 1 : 0,
         req.params.id,
       ],
@@ -458,8 +505,13 @@ router.patch("/:id", adminRequired, async (req, res) => {
     const params = [];
     for (const key of fields) {
       if (req.body?.[key] !== undefined) {
+        const value =
+          key === "category" ? normalizeCategory(req.body[key]) : req.body[key];
+        if (key === "category" && !CATEGORIES.has(value)) {
+          return res.status(400).json({ error: "Invalid category." });
+        }
         updates.push(`${key} = ?`);
-        params.push(req.body[key]);
+        params.push(value);
       }
     }
     if (req.body?.details !== undefined) {

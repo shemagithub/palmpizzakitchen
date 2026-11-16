@@ -9,7 +9,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { type MenuItem, normalizeComboSlots, normalizeSizePrices } from "@/data/menu";
+import {
+  type MenuItem,
+  normalizeAlcoholKind,
+  normalizeComboSlots,
+  normalizeSizePrices,
+} from "@/data/menu";
 import { api } from "@/lib/api";
 
 type MenuCtx = {
@@ -19,6 +24,8 @@ type MenuCtx = {
   combos: MenuItem[];
   drinks: MenuItem[];
   burgers: MenuItem[];
+  fruit: MenuItem[];
+  alcohol: MenuItem[];
   loading: boolean;
   error: string;
   refresh: () => Promise<void>;
@@ -33,6 +40,8 @@ const MenuContext = createContext<MenuCtx>({
   combos: [],
   drinks: [],
   burgers: [],
+  fruit: [],
+  alcohol: [],
   loading: true,
   error: "",
   refresh: async () => {},
@@ -52,12 +61,20 @@ function normalize(raw: MenuItem[]): MenuItem[] {
       const sizes = normalizeSizePrices(details.sizes);
       if (sizes) details.sizes = sizes;
       else delete details.sizes;
+      const alcoholKind = normalizeAlcoholKind(details.alcoholKind);
+      if (alcoholKind) details.alcoholKind = alcoholKind;
+      else delete details.alcoholKind;
       const slots = normalizeComboSlots(details.comboSlots);
       if (slots) details.comboSlots = slots;
       else delete details.comboSlots;
     }
+    const rawCategory = String(item.category || "");
+    const category = (
+      rawCategory === "dessert" ? "fruit" : rawCategory
+    ) as MenuItem["category"];
     return {
       ...item,
+      category,
       rating: Number(item.rating) || 0,
       reviews: Number(item.reviews) || 0,
       price: Number(item.price) || 0,
@@ -116,6 +133,8 @@ export default function MenuProvider({ children }: { children: ReactNode }) {
     const combos = items.filter((i) => i.category === "combo");
     const drinks = items.filter((i) => i.category === "drink");
     const burgers = items.filter((i) => i.category === "burger");
+    const fruit = items.filter((i) => i.category === "fruit");
+    const alcohol = items.filter((i) => i.category === "alcohol");
     return {
       items,
       pizzas,
@@ -123,6 +142,8 @@ export default function MenuProvider({ children }: { children: ReactNode }) {
       combos,
       drinks,
       burgers,
+      fruit,
+      alcohol,
       loading,
       error,
       refresh,

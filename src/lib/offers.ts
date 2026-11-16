@@ -83,7 +83,9 @@ export const ELIGIBLE_CATEGORY_OPTIONS: {
   { id: "meat", label: "Meat pizzas", group: "Pizzas" },
   { id: "burger", label: "Burgers", group: "Burgers" },
   { id: "side", label: "Sides", group: "More" },
-  { id: "drink", label: "Drinks", group: "More" },
+  { id: "fruit", label: "Fruit parts", group: "More" },
+  { id: "drink", label: "Soft drinks", group: "More" },
+  { id: "alcohol", label: "Wine & alcohol", group: "More" },
   { id: "combo", label: "Combos", group: "More" },
 ];
 
@@ -294,6 +296,8 @@ export function filterMenuForOffer(
       : [...PIZZA_CATEGORY_SLUGS, "burger"]
     ).map((c) => String(c)),
   );
+  if (allowed.has("dessert")) allowed.add("fruit");
+  if (allowed.has("fruit")) allowed.add("dessert");
   return items.filter((item) => allowed.has(item.category));
 }
 

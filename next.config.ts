@@ -44,7 +44,13 @@ const nextConfig: NextConfig = {
   },
   ...(!staticExport
     ? {
-        serverExternalPackages: ["imapflow", "mailparser", "nodemailer", "dotenv"],
+        serverExternalPackages: [
+          "imapflow",
+          "mailparser",
+          "nodemailer",
+          "dotenv",
+          "mysql2",
+        ],
         async rewrites() {
           return [
             {

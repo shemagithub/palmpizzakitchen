@@ -213,7 +213,7 @@ export default function AdminHeroPage() {
               <ul className="mt-2 space-y-1.5 text-sm text-white/90">
                 <li>Use wide photos (about 1600×900) for best crop.</li>
                 <li>Keep titles short - two lines max.</li>
-                <li>CTA links can be `/pizzas`, `/burgers`, `/combos`, or `/offers`.</li>
+                <li>CTA links can be `/pizzas`, `/burgers`, `/fruit`, `/bar`, `/combos`, or `/offers`.</li>
                 <li>Use templates for BOGO deals — upload a burger or pizza photo.</li>
               </ul>
               <Link

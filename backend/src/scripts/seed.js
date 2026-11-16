@@ -2,6 +2,7 @@ import "../loadEnv.js";
 import bcrypt from "bcryptjs";
 import { pathToFileURL } from "url";
 import { pool, query } from "../db.js";
+import { MENU_EXTRAS } from "../data/menuExtras.js";
 
 const MENU = [
   {
@@ -127,7 +128,7 @@ const MENU = [
   {
     id: "party-pack",
     name: "Party Pack",
-    description: "3 large pizzas, wings, breadsticks, and dessert.",
+    description: "3 large pizzas, wings, breadsticks, and fruit.",
     price: 63000,
     image:
       "https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=400&q=80",
@@ -354,6 +355,7 @@ const MENU = [
     badge: null,
     category: "burger",
   },
+  ...MENU_EXTRAS,
 ];
 
 const OFFERS = [
@@ -467,8 +469,8 @@ async function seed() {
   for (const item of MENU) {
     await query(
       `INSERT INTO menu_items
-        (id, name, description, price, image, rating, reviews, badge, category, active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        (id, name, description, price, image, rating, reviews, badge, category, details, active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
        ON DUPLICATE KEY UPDATE
          name = VALUES(name),
          description = VALUES(description),
@@ -478,6 +480,7 @@ async function seed() {
          reviews = VALUES(reviews),
          badge = VALUES(badge),
          category = VALUES(category),
+         details = IF(menu_items.details IS NULL OR menu_items.details = '', VALUES(details), menu_items.details),
          active = 1`,
       [
         item.id,
@@ -489,13 +492,17 @@ async function seed() {
         item.reviews,
         item.badge,
         item.category,
+        item.details ? JSON.stringify(item.details) : null,
       ],
     );
 
     await query(`DELETE FROM menu_images WHERE item_id = ?`, [item.id]);
-    // Drinks/burgers keep only their own photo(s); pizzas get a small stock gallery.
+    // Single-photo items keep their own picture; pizzas get a small stock gallery.
     const extras =
-      item.category === "drink" || item.category === "burger"
+      item.category === "drink" ||
+      item.category === "burger" ||
+      item.category === "fruit" ||
+      item.category === "alcohol"
         ? [item.image]
         : [
             item.image,

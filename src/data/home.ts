@@ -133,10 +133,16 @@ export const QUICK_CATEGORIES = [
       "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=200&q=70",
   },
   {
-    label: "Desserts",
-    href: "/sides",
+    label: "Fruit parts",
+    href: "/fruit",
     image:
-      "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=200&q=70",
+      "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=200&q=70",
+  },
+  {
+    label: "Wine & bar",
+    href: "/bar",
+    image:
+      "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=200&q=70",
   },
 ] as const;
 

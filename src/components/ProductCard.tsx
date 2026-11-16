@@ -102,18 +102,18 @@ export default function ProductCard({
           alt={item.name}
           fill
           className="pointer-events-none object-cover transition duration-500 group-hover:scale-[1.04]"
-          sizes="(max-width: 768px) 70vw, 25vw"
+          sizes="(max-width: 640px) 46vw, 25vw"
         />
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col p-4 md:p-5">
-        <h3 className="font-[family-name:var(--font-oswald)] text-xl leading-tight tracking-[0.02em] text-pam-ink transition group-hover:text-pam-red md:text-[1.35rem]">
+      <div className="flex min-w-0 flex-1 flex-col p-3 sm:p-4 md:p-5">
+        <h3 className="font-[family-name:var(--font-oswald)] text-base leading-tight tracking-[0.02em] text-pam-ink transition group-hover:text-pam-red sm:text-xl md:text-[1.35rem]">
           {item.name}
         </h3>
-        <p className="mt-1.5 line-clamp-2 text-sm leading-snug text-pam-muted">
+        <p className="mt-1 line-clamp-2 text-xs leading-snug text-pam-muted sm:mt-1.5 sm:text-sm">
           {item.description}
         </p>
-        <p className="mt-2.5 flex items-center gap-1.5 text-sm">
+        <p className="mt-2 flex items-center gap-1.5 text-xs sm:mt-2.5 sm:text-sm">
           <span className="text-pam-gold" aria-hidden>
             ★
           </span>
@@ -123,8 +123,8 @@ export default function ProductCard({
           <span className="text-pam-muted">({formatReviews(item.reviews)})</span>
         </p>
 
-        <div className="mt-auto flex min-w-0 items-center justify-between gap-2 pt-4">
-          <p className="min-w-0 shrink font-[family-name:var(--font-oswald)] text-xl text-pam-ink sm:text-2xl md:text-[1.7rem]">
+        <div className="mt-auto flex min-w-0 items-center justify-between gap-2 pt-3 sm:pt-4">
+          <p className="min-w-0 shrink font-[family-name:var(--font-oswald)] text-base text-pam-ink sm:text-2xl md:text-[1.7rem]">
             {sizes ? (
               <span>
                 <span className="mr-1 text-[10px] font-bold tracking-wide text-pam-muted uppercase">
@@ -144,7 +144,7 @@ export default function ProductCard({
                 e.stopPropagation();
                 goToProduct(item.id);
               }}
-              className="rounded-full bg-pam-sand px-3 py-2 text-[11px] font-bold text-pam-ink transition hover:bg-pam-border"
+              className="hidden rounded-full bg-pam-sand px-3 py-2 text-[11px] font-bold text-pam-ink transition hover:bg-pam-border sm:inline-flex"
             >
               Details
             </a>

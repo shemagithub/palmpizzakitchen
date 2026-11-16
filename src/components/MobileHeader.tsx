@@ -18,17 +18,23 @@ import { useAuthUser, userInitials } from "@/hooks/useAuthUser";
 import { useCartCount } from "@/hooks/useCartCount";
 import { clearSession } from "@/lib/api";
 
-const LINKS = [
+const ORDER_LINKS = [
   { label: "Home", href: "/" },
   { label: "Pizzas", href: "/pizzas" },
   { label: "Burgers", href: "/burgers" },
   { label: "Sides", href: "/sides" },
+  { label: "Fruit", href: "/fruit" },
   { label: "Drinks", href: "/drinks" },
+  { label: "Wine & bar", href: "/bar" },
   { label: "Combos", href: "/combos" },
   { label: "Offers", href: "/offers" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
   { label: "Cart", href: "/cart" },
+];
+
+const INFO_LINKS = [
+  { label: "About", href: "/about" },
+  { label: "FAQ", href: "/faq" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export default function MobileHeader() {
@@ -57,8 +63,8 @@ export default function MobileHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-[#f7f4ef]/95 px-4 pb-3 pt-3 backdrop-blur-md md:hidden">
-        <div className="mb-3 flex items-center gap-2">
+      <header className="sticky top-0 z-40 bg-[#f7f4ef]/95 px-4 pb-2.5 pt-2.5 backdrop-blur-md md:hidden">
+        <div className="mb-2 flex items-center gap-2">
           <button
             type="button"
             aria-label="Open menu"
@@ -98,7 +104,7 @@ export default function MobileHeader() {
         </div>
 
         <form onSubmit={runSearch} className="flex items-center gap-2">
-          <label className="soft-card flex flex-1 items-center gap-2 rounded-full px-4 py-3">
+          <label className="soft-card flex flex-1 items-center gap-2 rounded-full px-4 py-2.5">
             <SearchIcon className="h-4 w-4 shrink-0 text-pam-muted" />
             <input
               type="search"
@@ -147,12 +153,53 @@ export default function MobileHeader() {
             </div>
 
             <nav className="flex-1 overflow-y-auto px-3 py-3">
-              {LINKS.map((item) => (
+              {(settings.open_hours || settings.phone || settings.address) && (
+                <div className="mb-3 space-y-1 rounded-2xl bg-pam-sand px-4 py-3 text-sm">
+                  {settings.open_hours ? (
+                    <p className="font-bold text-pam-ink">{settings.open_hours}</p>
+                  ) : null}
+                  {settings.phone ? (
+                    <a
+                      href={`tel:${settings.phone.replace(/[^\d+]/g, "")}`}
+                      className="block font-bold text-pam-red"
+                    >
+                      Call {settings.phone}
+                    </a>
+                  ) : null}
+                  {settings.address ? (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block font-semibold text-pam-ink"
+                    >
+                      {settings.address}
+                    </a>
+                  ) : null}
+                </div>
+              )}
+              <p className="px-4 pb-1 text-[11px] font-bold tracking-wide text-pam-muted uppercase">
+                Order
+              </p>
+              {ORDER_LINKS.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className="block rounded-2xl px-4 py-3.5 text-base font-semibold text-pam-ink transition hover:bg-pam-sand active:bg-pam-sand"
+                  className="block rounded-2xl px-4 py-3 text-base font-semibold text-pam-ink transition hover:bg-pam-sand active:bg-pam-sand"
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <p className="mt-2 px-4 pb-1 text-[11px] font-bold tracking-wide text-pam-muted uppercase">
+                Info
+              </p>
+              {INFO_LINKS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className="block rounded-2xl px-4 py-3 text-base font-semibold text-pam-ink transition hover:bg-pam-sand active:bg-pam-sand"
                 >
                   {item.label}
                 </Link>

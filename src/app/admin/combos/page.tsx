@@ -80,7 +80,9 @@ const SLOT_CATEGORY_OPTIONS: {
   { id: "cheese", label: "Cheese pizza" },
   { id: "veggie", label: "Veggie pizza" },
   { id: "meat", label: "Meat pizza" },
-  { id: "drink", label: "Drinks / soda" },
+  { id: "drink", label: "Soft drinks" },
+  { id: "fruit", label: "Fruit parts" },
+  { id: "alcohol", label: "Wine & alcohol" },
   { id: "side", label: "Sides" },
   { id: "burger", label: "Burgers" },
 ];

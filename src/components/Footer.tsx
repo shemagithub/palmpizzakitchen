@@ -11,7 +11,9 @@ const MENU = [
   { href: "/pizzas", label: "Pizzas" },
   { href: "/burgers", label: "Burgers" },
   { href: "/sides", label: "Sides" },
+  { href: "/fruit", label: "Fruit parts" },
   { href: "/drinks", label: "Drinks" },
+  { href: "/bar", label: "Wine & bar" },
   { href: "/combos", label: "Combos" },
   { href: "/offers", label: "Offers" },
 ];
@@ -116,9 +118,14 @@ export default function Footer() {
                     {settings.promo_badge}
                   </span>
                 )}
-                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold tracking-wide text-white/70">
-                  {settings.phone}
-                </span>
+                {settings.phone ? (
+                  <a
+                    href={`tel:${settings.phone.replace(/[^\d+]/g, "")}`}
+                    className="rounded-full border border-white/15 bg-white/5 px-3 py-2 text-[11px] font-semibold tracking-wide text-white"
+                  >
+                    Call {settings.phone}
+                  </a>
+                ) : null}
               </div>
 
               <div className="mt-7 flex flex-wrap gap-2.5">

@@ -14,7 +14,9 @@ const NAV = [
   { label: "Pizzas", href: "/pizzas" },
   { label: "Burgers", href: "/burgers" },
   { label: "Sides", href: "/sides" },
+  { label: "Fruit", href: "/fruit" },
   { label: "Drinks", href: "/drinks" },
+  { label: "Wine & bar", href: "/bar" },
   { label: "Combos", href: "/combos" },
   { label: "Offers", href: "/offers" },
   { label: "About", href: "/about" },
@@ -46,15 +48,15 @@ export default function Header() {
           </div>
         </div>
 
-        <nav className="hidden items-center gap-2 rounded-full bg-pam-sand/70 p-1 shadow-sm lg:flex">
+        <nav className="no-scrollbar hidden max-w-[min(46rem,54vw)] items-center gap-1 overflow-x-auto rounded-full bg-pam-sand/70 p-1 shadow-sm lg:flex xl:max-w-none">
           {NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`text-[0.95rem] transition ${
+              className={`shrink-0 text-sm transition ${
                 isActive(item.href)
-                  ? "rounded-full bg-pam-red px-4 py-2 text-white shadow-[0_10px_25px_rgba(227,24,55,0.25)]"
-                  : "rounded-full px-4 py-2 font-semibold text-pam-muted hover:bg-white/60 hover:text-pam-ink"
+                  ? "rounded-full bg-pam-red px-3 py-2 text-white shadow-[0_10px_25px_rgba(227,24,55,0.25)]"
+                  : "rounded-full px-3 py-2 font-semibold text-pam-muted hover:bg-white/60 hover:text-pam-ink"
               }`}
             >
               {item.label}

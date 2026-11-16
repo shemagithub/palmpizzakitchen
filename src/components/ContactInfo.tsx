@@ -22,11 +22,30 @@ export default function ContactInfo() {
           Kitchen info
         </h2>
         {settings.phone ? (
-          <p className="mt-3 text-pam-muted">{settings.phone}</p>
+          <a
+            href={`tel:${settings.phone.replace(/[^\d+]/g, "")}`}
+            className="mt-3 block min-h-11 py-1 text-base font-bold text-pam-red"
+          >
+            {settings.phone}
+          </a>
         ) : null}
-        {settings.email ? <p className="text-pam-muted">{settings.email}</p> : null}
+        {settings.email ? (
+          <a
+            href={`mailto:${settings.email}`}
+            className="block min-h-11 py-1 font-semibold text-pam-ink"
+          >
+            {settings.email}
+          </a>
+        ) : null}
         {settings.address ? (
-          <p className="text-pam-muted">{settings.address}</p>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="block min-h-11 py-1 font-semibold text-pam-ink"
+          >
+            {settings.address}
+          </a>
         ) : null}
       </div>
       {settings.open_hours ? (

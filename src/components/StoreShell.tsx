@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import MobileHeader from "@/components/MobileHeader";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import ShopInfoBar from "@/components/ShopInfoBar";
 import SiteSettingsProvider from "@/components/SiteSettingsProvider";
 import MenuProvider from "@/components/MenuProvider";
 import { PalmPickFab } from "@/components/PalmPickSection";
@@ -41,6 +42,7 @@ export default function StoreShell({ children }: { children: ReactNode }) {
                 />
               }
             />
+            <ShopInfoBar />
             <main className="min-h-[70vh] pb-24 md:pb-0">{children}</main>
             <PalmPickFab />
             <Footer />
